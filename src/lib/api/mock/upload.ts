@@ -118,7 +118,21 @@ export function createUploadSession(
   let objectUrl: string | null = null;
   const listeners = new Set<() => void>();
 
+  /**
+   * useSyncExternalStore compares snapshots by identity, so this must return
+   * the *same* object until something actually changes. Building a fresh one
+   * per call sends React into an infinite render loop.
+   */
+  /** The simulated drop fires once per session; a retry must be able to
+   *  succeed, otherwise "resume" is a button that never works. */
+  let hasInterrupted = Boolean(opts.resumeFrom);
+  let cached: UploadSnapshot | null = null;
+  const invalidate = () => {
+    cached = null;
+  };
+
   const emit = () => {
+    invalidate();
     for (const l of listeners) l();
   };
 
@@ -157,10 +171,11 @@ export function createUploadSession(
     const priorFraction = ((index - 1) * CHUNK_SIZE) / file.size;
     if (
       getScenarios().uploadInterruption &&
+      !hasInterrupted &&
       fraction >= 0.4 &&
-      priorFraction < 0.4 &&
-      chunks[index] !== "failed"
+      priorFraction < 0.4
     ) {
+      hasInterrupted = true;
       chunks[index] = "failed";
       status = "error";
       error = "Upload interrupted. Your progress is saved.";
@@ -184,16 +199,21 @@ export function createUploadSession(
   }
 
   return {
-    snapshot: () => ({
-      id,
-      fileName: file.name,
-      totalBytes: file.size,
-      uploadedBytes: doneBytes(),
-      progress: file.size === 0 ? 1 : doneBytes() / file.size,
-      status,
-      error,
-      canResume: status === "error",
-    }),
+    snapshot: () => {
+      if (cached) return cached;
+      const uploaded = doneBytes();
+      cached = {
+        id,
+        fileName: file.name,
+        totalBytes: file.size,
+        uploadedBytes: uploaded,
+        progress: file.size === 0 ? 1 : uploaded / file.size,
+        status,
+        error,
+        canResume: status === "error",
+      };
+      return cached;
+    },
 
     start() {
       if (status === "uploading" || status === "complete") return;

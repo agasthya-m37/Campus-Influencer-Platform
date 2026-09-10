@@ -62,8 +62,13 @@ export function useUpload() {
     () => ({
       snapshot,
       hasSession: session !== null,
-      // Only meaningful once complete; null while uploading.
-      objectUrl: snapshot.status === "complete" ? session?.objectUrl() ?? null : null,
+      /**
+       * Read lazily rather than during render: the blob URL only exists once
+       * the upload finishes, and calling through on every render would make
+       * this object unstable.
+       */
+      getObjectUrl: () =>
+        snapshot.status === "complete" ? (session?.objectUrl() ?? null) : null,
       begin,
       clear,
       pause: () => session?.pause(),

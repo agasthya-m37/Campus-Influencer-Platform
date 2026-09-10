@@ -121,7 +121,7 @@ export function SubmitScreen({ deliverableId }: { deliverableId: string }) {
             name: upload.snapshot.fileName,
             size: upload.snapshot.totalBytes,
             mime: "video/mp4",
-            url: upload.objectUrl ?? "",
+            url: upload.getObjectUrl() ?? "",
             scan_status: "pending",
           },
         ] as never,
