@@ -26,6 +26,23 @@ failure scenarios, or to reset the demo data.
 | `npm run compliance` | Greps product code for prohibited terms |
 | `npm run verify` | All four, in order |
 
+## Build plan and screen specs
+
+Work is split across two agents. Start at [`docs/00-START-HERE.md`](docs/00-START-HERE.md).
+
+| Document | For |
+|---|---|
+| [`docs/00-START-HERE.md`](docs/00-START-HERE.md) | Both — the split, ground rules, product boundaries |
+| [`docs/10-shared-contracts.md`](docs/10-shared-contracts.md) | Both — tokens, components, API, domain rules |
+| [`docs/20-track-a-creator.md`](docs/20-track-a-creator.md) | Creator portal, ordered |
+| [`docs/30-track-b-admin.md`](docs/30-track-b-admin.md) | Admin console, ordered |
+| [`docs/40-shared-requests.md`](docs/40-shared-requests.md) | Requests for shared-code changes |
+| [`docs/screens/`](docs/screens/) | One spec per screen |
+
+Track A owns the creator portal **and all shared code**. Track B owns the
+admin console and consumes shared code without editing it. The specs change as
+client requirements land; update the spec in the same commit as the code.
+
 ## How this is put together
 
 Three portals live in one app as route groups, because each needs its own
