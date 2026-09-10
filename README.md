@@ -39,8 +39,9 @@ src/
 │   ├── ui/              vendored shadcn primitives
 │   ├── patterns/        cross-portal: status pill, SLA countdown, stepper…
 │   ├── domain/          domain-shaped but still pure: task card, metric tile…
-│   └── chrome/          nav, shells, dev bar
+│   └── chrome/          pure chrome: bottom nav, theme provider
 ├── features/            THE ONLY DATA-BOUND LAYER. Containers + mappers.
+│   └── shell/           shells and dev bar — they fetch, so they live here
 ├── lib/
 │   ├── api/             client.ts → transport.ts → mock/
 │   ├── domain/          pure business rules, unit tested
