@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { BottomNav } from "@/components/chrome/bottom-nav";
-import { DevBar } from "@/components/chrome/dev-bar";
+import { DevBar } from "@/features/shell/dev-bar";
 import { api } from "@/lib/api/client";
 import { useQuery } from "@/lib/api/hooks";
 import { openTasks } from "@/lib/domain/tasks";

@@ -15,7 +15,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ComponentType, ReactNode } from "react";
 
-import { DevBar } from "@/components/chrome/dev-bar";
+import { DevBar } from "@/features/shell/dev-bar";
 import { cn } from "@/lib/utils";
 
 interface NavLink {

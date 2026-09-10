@@ -3,7 +3,7 @@
 import { Moon, RotateCcw, Settings2, Sun, Users } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -24,6 +24,16 @@ import {
   type Scenarios,
 } from "@/lib/api/mock/scenarios";
 import { store } from "@/lib/api/mock/store";
+
+/** Frozen so the server snapshot keeps a stable identity across renders. */
+const SERVER_SCENARIOS: Scenarios = Object.freeze({
+  networkError: false,
+  conflict: false,
+  validationError: false,
+  uploadInterruption: false,
+  infectedFile: false,
+  slowNetwork: false,
+});
 
 const ROLES = [
   { id: "usr_creator", label: "Ananya (Creator)", href: "/home" },
@@ -74,10 +84,18 @@ const TOGGLES: Array<{ key: keyof Scenarios; label: string; help: string }> = [
 export function DevBar() {
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
-  const [scenarios, setScenarios] = useState<Scenarios>(getScenarios);
+  /**
+   * Scenario flags live in localStorage, which the server cannot read. The
+   * third argument is the server snapshot: without it the badge renders on
+   * the client and not on the server, and every page carrying this bar
+   * reports a hydration mismatch.
+   */
+  const scenarios = useSyncExternalStore(
+    subscribeScenarios,
+    getScenarios,
+    () => SERVER_SCENARIOS,
+  );
   const [mounted, setMounted] = useState(false);
-
-  useEffect(() => subscribeScenarios(() => setScenarios({ ...getScenarios() })), []);
 
   // Deferred so the theme label matches after hydration without a flash.
   useEffect(() => {

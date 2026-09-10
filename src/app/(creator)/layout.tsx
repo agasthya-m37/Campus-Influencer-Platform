@@ -1,6 +1,6 @@
 import type { Viewport } from "next";
 
-import { CreatorShell } from "@/components/chrome/creator-shell";
+import { CreatorShell } from "@/features/shell/creator-shell";
 import { SessionProvider } from "@/features/auth/session";
 
 /**
