@@ -63,3 +63,12 @@ export const OWNER_LABEL = {
   brand: "Brand",
   system: "System",
 } as const;
+
+/**
+ * Handles arrive with or without a leading "@" depending on the platform and
+ * on what the creator typed. Normalise at the display layer rather than
+ * trusting every source to agree.
+ */
+export function formatHandle(handle: string): string {
+  return `@${handle.replace(/^@+/, "")}`;
+}

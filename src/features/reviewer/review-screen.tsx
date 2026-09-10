@@ -35,7 +35,7 @@ import {
 } from "@/lib/domain/review";
 import { slaView } from "@/lib/domain/sla";
 import { deliverableStatus } from "@/lib/domain/status";
-import { REVIEW_STAGE_HELP, REVIEW_STAGE_LABEL } from "@/lib/format/copy";
+import { formatHandle, REVIEW_STAGE_HELP, REVIEW_STAGE_LABEL } from "@/lib/format/copy";
 import { formatCompact } from "@/lib/format/currency";
 import { formatFull } from "@/lib/format/datetime";
 import { toTimelineEntries } from "@/features/deliverables/mappers";
@@ -400,7 +400,7 @@ export function ReviewScreen({ submissionId }: { submissionId: string }) {
                     rel="noreferrer"
                     className="truncate text-sm text-primary underline"
                   >
-                    @{account.handle}
+                    {formatHandle(account.handle)}
                   </a>
                   <span className="shrink-0 font-mono text-caption tabular text-muted-foreground">
                     {formatCompact(account.followers)}

@@ -12,6 +12,7 @@ import { Progress } from "@/components/ui/progress";
 import { api } from "@/lib/api/client";
 import { messageFor } from "@/lib/api/errors";
 import { useQuery } from "@/lib/api/hooks";
+import { formatHandle } from "@/lib/format/copy";
 import { formatCompact } from "@/lib/format/currency";
 import { formatFull } from "@/lib/format/datetime";
 import type { AccountType, ConsentType } from "@/lib/types";
@@ -102,7 +103,7 @@ export function ProfileScreen() {
                     <Play className="size-4 shrink-0 text-muted-foreground" aria-hidden />
                   )}
                   <div className="min-w-0">
-                    <p className="truncate font-medium">@{account.handle}</p>
+                    <p className="truncate font-medium">{formatHandle(account.handle)}</p>
                     <p className="text-caption text-muted-foreground tabular">
                       {formatCompact(account.followers)} followers
                     </p>

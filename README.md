@@ -23,6 +23,8 @@ to force failure scenarios, or to reset the demo data.
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | ESLint, including the architecture boundary rule |
 | `npm test` | Vitest over the domain rules |
+| `npm run compliance` | Greps product code for prohibited terms |
+| `npm run verify` | All four, in order |
 
 ## How this is put together
 
@@ -110,8 +112,9 @@ unlabelled rate or an unattributed number is a compile error. The three
 earnings strings live in `lib/format/copy.ts`.
 
 **No identity documents exist in the Phase 1 schema or UI** — no college ID,
-Aadhaar, PAN, UPI or bank field. That is a compliance boundary with a test
-asserting it.
+Aadhaar, PAN, UPI or bank field. `npm run compliance` greps product code for
+these and for the forbidden earnings phrasing, ignoring comments and tests so
+the rules can still be documented where they apply.
 
 ## What is verified, and how
 
