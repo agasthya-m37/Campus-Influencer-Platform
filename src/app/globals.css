@@ -1,0 +1,407 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ==========================================================================
+   LAYER 1 — PRIMITIVES
+   Raw palette. Nothing outside Layer 2 may reference these.
+   When Puzzle Media's design lands, this block is replaced wholesale.
+   ========================================================================== */
+:root {
+  /* Warm neutrals — bone through ink. Warm, not blue-grey: this is a
+     content product about people, and warmth separates it from SaaS grey. */
+  --pm-bone-50: #fbfaf7;
+  --pm-bone-100: #f3f1ec;
+  --pm-bone-200: #e8e4db;
+  --pm-bone-300: #e2ded6;
+  --pm-ink-400: #8a857b;
+  --pm-ink-500: #5c5850;
+  --pm-ink-700: #2e2c28;
+  --pm-ink-900: #1a1917;
+
+  --pm-char-950: #0e0d0c;
+  --pm-char-900: #131211;
+  --pm-char-800: #1c1a18;
+  --pm-char-700: #23211e;
+  --pm-char-600: #33302b;
+  --pm-char-500: #4a463f;
+
+  --pm-dust-300: #a8a29a;
+  --pm-dust-100: #f5f2ec;
+
+  /* Brand teal-green. Uncommon in this category, energetic without being
+     juvenile, and holds AA on both bone and charcoal at related hues. */
+  --pm-teal-800: #0a5f4e;
+  --pm-teal-700: #0e7c66;
+  --pm-teal-600: #128b73;
+  --pm-teal-400: #3dbfa0;
+  --pm-teal-300: #6ed3ba;
+  --pm-teal-100: #d4f0e7;
+  --pm-teal-050: #e8f7f2;
+  --pm-teal-975: #08251f;
+  --pm-teal-950: #0b3329;
+
+  /* Amber — the energy colour. Reserved for action-required and pending. */
+  --pm-amber-700: #b45309;
+  --pm-amber-500: #e8833a;
+  --pm-amber-400: #f0a05c;
+  --pm-amber-300: #f5bc86;
+  --pm-amber-100: #fbe8d3;
+  --pm-amber-050: #fdf3e8;
+  --pm-amber-950: #3d2408;
+  --pm-amber-900: #52310c;
+
+  /* Status hues */
+  --pm-red-700: #b3261e;
+  --pm-red-400: #f2837b;
+  --pm-red-100: #fbdedc;
+  --pm-red-950: #3d100d;
+
+  --pm-green-700: #15654a;
+  --pm-green-400: #4fc79e;
+  --pm-green-100: #d5f0e3;
+  --pm-green-950: #0c2e22;
+
+  --pm-blue-700: #1f5f8b;
+  --pm-blue-400: #6fb4dd;
+  --pm-blue-100: #dbeaf5;
+  --pm-blue-950: #0e2b3d;
+
+  --pm-gold-700: #8a5a00;
+  --pm-gold-400: #e0b15c;
+  --pm-gold-100: #f7ead0;
+  --pm-gold-950: #3a2905;
+}
+
+/* ==========================================================================
+   LAYER 2 — SEMANTIC
+   Maps primitives to meaning. shadcn's contract names are preserved so
+   vendored components work untouched. This is the re-skin edit surface.
+   ========================================================================== */
+:root {
+  --radius: 0.625rem;
+
+  /* shadcn contract */
+  --background: var(--pm-bone-50);
+  --foreground: var(--pm-ink-900);
+  --card: #ffffff;
+  --card-foreground: var(--pm-ink-900);
+  --popover: #ffffff;
+  --popover-foreground: var(--pm-ink-900);
+  --primary: var(--pm-teal-700);
+  --primary-foreground: #ffffff;
+  --secondary: var(--pm-bone-100);
+  --secondary-foreground: var(--pm-ink-700);
+  --muted: var(--pm-bone-100);
+  --muted-foreground: var(--pm-ink-500);
+  --accent: var(--pm-teal-050);
+  --accent-foreground: var(--pm-teal-800);
+  --destructive: var(--pm-red-700);
+  --border: var(--pm-bone-300);
+  --input: var(--pm-bone-300);
+  --ring: var(--pm-teal-700);
+
+  --sidebar: var(--pm-bone-100);
+  --sidebar-foreground: var(--pm-ink-900);
+  --sidebar-primary: var(--pm-teal-700);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--pm-bone-200);
+  --sidebar-accent-foreground: var(--pm-ink-900);
+  --sidebar-border: var(--pm-bone-300);
+  --sidebar-ring: var(--pm-teal-700);
+
+  --chart-1: var(--pm-teal-700);
+  --chart-2: var(--pm-amber-500);
+  --chart-3: var(--pm-blue-700);
+  --chart-4: var(--pm-gold-700);
+  --chart-5: var(--pm-ink-500);
+
+  /* Ours — surfaces beyond shadcn's vocabulary */
+  --surface: #ffffff;
+  --surface-sunken: var(--pm-bone-100);
+  --surface-raised: #ffffff;
+
+  /* Ours — the energy accent, distinct from shadcn's --accent */
+  --brand-energy: var(--pm-amber-700);
+  --brand-energy-bg: var(--pm-amber-050);
+  --brand-energy-border: var(--pm-amber-100);
+
+  /* Ours — the five status tones. Every pill in every domain resolves here. */
+  --status-neutral-bg: var(--pm-bone-100);
+  --status-neutral-fg: var(--pm-ink-500);
+  --status-neutral-border: var(--pm-bone-300);
+
+  --status-info-bg: var(--pm-blue-100);
+  --status-info-fg: var(--pm-blue-700);
+  --status-info-border: #b9d6ea;
+
+  --status-warn-bg: var(--pm-amber-100);
+  --status-warn-fg: var(--pm-amber-700);
+  --status-warn-border: var(--pm-amber-300);
+
+  --status-success-bg: var(--pm-green-100);
+  --status-success-fg: var(--pm-green-700);
+  --status-success-border: #a9dcc4;
+
+  --status-danger-bg: var(--pm-red-100);
+  --status-danger-fg: var(--pm-red-700);
+  --status-danger-border: #f0b8b4;
+
+  /* Ours — warm-tinted shadows, never black */
+  --shadow-sm: 0 1px 2px rgb(26 25 23 / 0.06), 0 1px 1px rgb(26 25 23 / 0.04);
+  --shadow-md: 0 4px 12px rgb(26 25 23 / 0.08), 0 1px 3px rgb(26 25 23 / 0.05);
+  --shadow-lg: 0 12px 32px rgb(26 25 23 / 0.12), 0 2px 8px rgb(26 25 23 / 0.06);
+
+  /* Ours — motion */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur-fast: 120ms;
+  --dur-base: 180ms;
+  --dur-slow: 240ms;
+}
+
+/* Dark mode is RE-PICKED, not inverted. The light brand teal fails
+   contrast on charcoal, so dark uses a lifted variant. This asymmetry is
+   precisely why the token layer exists. */
+.dark {
+  --background: var(--pm-char-900);
+  --foreground: var(--pm-dust-100);
+  --card: var(--pm-char-800);
+  --card-foreground: var(--pm-dust-100);
+  --popover: var(--pm-char-800);
+  --popover-foreground: var(--pm-dust-100);
+  --primary: var(--pm-teal-400);
+  --primary-foreground: var(--pm-teal-975);
+  --secondary: var(--pm-char-700);
+  --secondary-foreground: var(--pm-dust-100);
+  --muted: var(--pm-char-700);
+  --muted-foreground: var(--pm-dust-300);
+  --accent: var(--pm-teal-950);
+  --accent-foreground: var(--pm-teal-300);
+  --destructive: var(--pm-red-400);
+  --border: var(--pm-char-600);
+  --input: var(--pm-char-600);
+  --ring: var(--pm-teal-400);
+
+  --sidebar: var(--pm-char-800);
+  --sidebar-foreground: var(--pm-dust-100);
+  --sidebar-primary: var(--pm-teal-400);
+  --sidebar-primary-foreground: var(--pm-teal-975);
+  --sidebar-accent: var(--pm-char-700);
+  --sidebar-accent-foreground: var(--pm-dust-100);
+  --sidebar-border: var(--pm-char-600);
+  --sidebar-ring: var(--pm-teal-400);
+
+  --chart-1: var(--pm-teal-400);
+  --chart-2: var(--pm-amber-400);
+  --chart-3: var(--pm-blue-400);
+  --chart-4: var(--pm-gold-400);
+  --chart-5: var(--pm-dust-300);
+
+  --surface: var(--pm-char-800);
+  --surface-sunken: var(--pm-char-950);
+  --surface-raised: var(--pm-char-700);
+
+  --brand-energy: var(--pm-amber-400);
+  --brand-energy-bg: var(--pm-amber-950);
+  --brand-energy-border: var(--pm-amber-900);
+
+  --status-neutral-bg: var(--pm-char-700);
+  --status-neutral-fg: var(--pm-dust-300);
+  --status-neutral-border: var(--pm-char-600);
+
+  --status-info-bg: var(--pm-blue-950);
+  --status-info-fg: var(--pm-blue-400);
+  --status-info-border: #1b4763;
+
+  --status-warn-bg: var(--pm-amber-950);
+  --status-warn-fg: var(--pm-amber-400);
+  --status-warn-border: var(--pm-amber-900);
+
+  --status-success-bg: var(--pm-green-950);
+  --status-success-fg: var(--pm-green-400);
+  --status-success-border: #164a37;
+
+  --status-danger-bg: var(--pm-red-950);
+  --status-danger-fg: var(--pm-red-400);
+  --status-danger-border: #5e1a16;
+
+  /* On dark, shadows are invisible; depth comes from lifted borders. */
+  --shadow-sm: 0 0 0 1px rgb(255 255 255 / 0.04);
+  --shadow-md: 0 0 0 1px rgb(255 255 255 / 0.06), 0 4px 12px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 0 0 1px rgb(255 255 255 / 0.08), 0 12px 32px rgb(0 0 0 / 0.5);
+}
+
+/* ==========================================================================
+   LAYER 3 — TAILWIND BINDING
+   Never edited during a re-skin.
+   ========================================================================== */
+@theme inline {
+  --font-sans: var(--font-familjen);
+  --font-display: var(--font-bricolage);
+  --font-heading: var(--font-bricolage);
+  --font-mono: var(--font-martian);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-surface: var(--surface);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface-raised: var(--surface-raised);
+
+  --color-energy: var(--brand-energy);
+  --color-energy-bg: var(--brand-energy-bg);
+  --color-energy-border: var(--brand-energy-border);
+
+  --color-status-neutral-bg: var(--status-neutral-bg);
+  --color-status-neutral-fg: var(--status-neutral-fg);
+  --color-status-neutral-border: var(--status-neutral-border);
+  --color-status-info-bg: var(--status-info-bg);
+  --color-status-info-fg: var(--status-info-fg);
+  --color-status-info-border: var(--status-info-border);
+  --color-status-warn-bg: var(--status-warn-bg);
+  --color-status-warn-fg: var(--status-warn-fg);
+  --color-status-warn-border: var(--status-warn-border);
+  --color-status-success-bg: var(--status-success-bg);
+  --color-status-success-fg: var(--status-success-fg);
+  --color-status-success-border: var(--status-success-border);
+  --color-status-danger-bg: var(--status-danger-bg);
+  --color-status-danger-fg: var(--status-danger-fg);
+  --color-status-danger-border: var(--status-danger-border);
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+
+  /* Type scale. Body is 15px: at 360px that buys ~2 characters per line. */
+  --text-display: clamp(1.75rem, 5vw, 2.5rem);
+  --text-display--line-height: 1.1;
+  --text-display--letter-spacing: -0.03em;
+  --text-h1: clamp(1.375rem, 3.5vw, 1.75rem);
+  --text-h1--line-height: 1.2;
+  --text-h1--letter-spacing: -0.02em;
+  --text-h2: 1.125rem;
+  --text-h2--line-height: 1.3;
+  --text-h2--letter-spacing: -0.01em;
+  --text-body: 0.9375rem;
+  --text-body--line-height: 1.5;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.45;
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1.4;
+
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    @apply font-sans;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-size: var(--text-body);
+    line-height: 1.5;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display;
+    letter-spacing: -0.02em;
+  }
+
+  /* Inputs stay at 16px to stop iOS zooming on focus. */
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+
+  @media (min-width: 640px) {
+    input,
+    textarea,
+    select {
+      font-size: var(--text-body);
+    }
+  }
+
+  /* Focus is always visible. Never outline:none. */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+@layer utilities {
+  /* Mandatory on currency, counts and metrics — without it, rupee amounts
+     shift column width per row and the ledger looks broken. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

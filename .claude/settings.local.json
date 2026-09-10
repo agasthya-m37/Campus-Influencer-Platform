@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx --yes create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --use-npm --disable-git --empty --yes)",
+      "Bash(rm -rf scaffold)",
+      "Bash(npx --yes create-next-app@latest scaffold --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --use-npm --disable-git --empty --yes)"
+    ]
+  }
+}
