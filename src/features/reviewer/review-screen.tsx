@@ -47,12 +47,21 @@ type Mode = "approve" | "request_changes" | "reject" | null;
  * F-REV-02. Creator context, content, versions, brief and feedback all on
  * one screen: a reviewer should never navigate to make a decision.
  */
-export function ReviewScreen({ submissionId }: { submissionId: string }) {
+export function ReviewScreen({
+  submissionId,
+  basePath = "/reviewer/submissions",
+}: {
+  submissionId: string;
+  basePath?: string;
+}) {
   const router = useRouter();
   const { data, isLoading, error, refetch } = useQuery(
     (signal) => api.reviewer.submission(submissionId, { signal }),
     [submissionId],
   );
+
+  // The queue this screen returns to depends on which portal opened it.
+  const queueHref = basePath === "/reviewer/submissions" ? "/reviewer/queue" : basePath;
 
   const [mode, setMode] = useState<Mode>(null);
   const [feedback, setFeedback] = useState("");
@@ -88,7 +97,7 @@ export function ReviewScreen({ submissionId }: { submissionId: string }) {
         } else {
           toast.success("Changes requested. It is back with the creator.");
         }
-        router.push("/reviewer/queue");
+        router.push(queueHref);
       },
       onError: (e) => toast.error(messageFor(e)),
     },
@@ -152,7 +161,7 @@ export function ReviewScreen({ submissionId }: { submissionId: string }) {
   return (
     <div className="space-y-6">
       <Button asChild variant="ghost" size="sm" className="-ml-2">
-        <Link href="/reviewer/queue">
+        <Link href={queueHref}>
           <ArrowLeft className="size-4" aria-hidden />
           Queue
         </Link>

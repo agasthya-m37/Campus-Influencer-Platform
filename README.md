@@ -13,8 +13,8 @@ npm run dev        # http://localhost:3000
 There is no backend. The app runs against an in-memory mock seeded with one
 creator across every workflow state, so every screen has something real to
 show. Use the floating **developer tools** button (bottom right, dev only) to
-switch between creator, Puzzle Media reviewer, brand reviewer and super admin,
-to force failure scenarios, or to reset the demo data.
+switch between creator, brand reviewer and Puzzle Media super admin, to force
+failure scenarios, or to reset the demo data.
 
 | Script | Does |
 |---|---|
@@ -31,6 +31,12 @@ to force failure scenarios, or to reset the demo data.
 Three portals live in one app as route groups, because each needs its own
 `viewport` and metadata: `(creator)` is a mobile-first PWA surface,
 `(reviewer)` and `(admin)` are desktop data tools.
+
+**Puzzle Media has no separate reviewer portal.** Its content review lives in
+the admin console under *Content review*, so one person moves between
+approving a script and verifying a live link without switching apps. The
+reviewer desk is brand-side only. Both use the same queue and review
+components; the API decides the review stage from the signed-in user's role.
 
 ```
 src/
@@ -94,10 +100,11 @@ mock handlers, and covered by tests — the UI cannot permit what they forbid.
 - **Three drafts per deliverable**, counted separately for script and video,
   including the first. Exhausting them rejects the deliverable; a super admin
   can grant another round.
-- **Two-stage review.** Puzzle Media reviews first, then the brand. The
-  brand's SLA clock starts only on release, and a brand reviewer requesting a
-  submission they cannot see gets a 404, never a 403 — a 403 would confirm
-  the record exists and leak other brands' campaigns.
+- **Two-stage review.** Puzzle Media reviews first from the admin console,
+  then the brand from the reviewer desk. The brand's SLA clock starts only on
+  release, and a brand reviewer requesting a submission they cannot see gets
+  a 404, never a 403 — a 403 would confirm the record exists and leak other
+  brands' campaigns.
 - **Reject** carries the reviewer's explicit choice of whether it also ends
   the creator's participation on the campaign.
 - **Participation is three state machines** on one discriminator. `Expired`
@@ -126,7 +133,7 @@ Checked by driving a real headless browser, not by inspection:
 | No horizontal scroll at 360px | 17 routes, zero overflow, zero console errors |
 | Two-tap rule | Every open task reachable in 1 tap |
 | Video gating | Gated deliverable renders 0 file inputs, 0 submit links |
-| Two-stage isolation | Brand sees nothing before release, by queue or direct URL |
+| Two-stage isolation | Brand sees nothing before release, by queue or direct URL; admin approves and it appears |
 | Upload resilience | Pause freezes, resume continues from the same byte, interruption at 42% retries to completion |
 | Auto-save and resume | Debounce holds 800ms, values survive a reload |
 | WCAG AA contrast | 5 routes × both themes, zero failures, measured from rendered pixels |

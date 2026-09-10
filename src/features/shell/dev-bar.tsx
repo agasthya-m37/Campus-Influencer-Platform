@@ -35,11 +35,12 @@ const SERVER_SCENARIOS: Scenarios = Object.freeze({
   slowNetwork: false,
 });
 
+/** Three roles ship: the creator, a brand-side reviewer, and Puzzle Media's
+ *  super admin — who also does Puzzle Media's content review. */
 const ROLES = [
   { id: "usr_creator", label: "Ananya (Creator)", href: "/home" },
-  { id: "usr_pm", label: "Puzzle Media reviewer", href: "/reviewer/queue" },
   { id: "usr_brand", label: "Brand reviewer (ZenFit)", href: "/reviewer/queue" },
-  { id: "usr_admin", label: "Super admin", href: "/admin/overview" },
+  { id: "usr_admin", label: "Puzzle Media (Super admin)", href: "/admin/overview" },
 ];
 
 const TOGGLES: Array<{ key: keyof Scenarios; label: string; help: string }> = [

@@ -13,6 +13,15 @@ export type Id = string;
 
 /* ── Identity and access ────────────────────────────────────────────── */
 
+/**
+ * The permission architecture carries five roles even though fewer appear in
+ * the UI, because adding a permission set later is cheap and retrofitting
+ * role separation into a written access layer is not.
+ *
+ * Shipping now: `creator`, `brand_reviewer`, `super_admin`. Puzzle Media
+ * reviews content from the admin console rather than a separate reviewer
+ * portal, so `campaign_manager` exists in the model but has no UI yet.
+ */
 export type Role =
   | "creator"
   | "brand_reviewer"

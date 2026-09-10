@@ -142,7 +142,9 @@ function deliverableOf(
 }
 
 const CREATOR_ID = "usr_creator";
-const REVIEWER_PM_ID = "usr_pm";
+/** Puzzle Media reviews inside the admin console; there is no separate
+ *  reviewer account. The reviewer portal is brand-side only. */
+const REVIEWER_PM_ID = "usr_admin";
 const REVIEWER_BRAND_ID = "usr_brand";
 
 /* ── the seed ───────────────────────────────────────────────────────── */
@@ -163,18 +165,6 @@ export function seedDatabase(): Database {
       email: "ananya.rao@example.in",
       phone_verified_at: addDays(t, -40),
       email_verified_at: addDays(t, -40),
-      timezone: "Asia/Kolkata",
-      last_active_at: t,
-      brand_id: null,
-    },
-    {
-      id: REVIEWER_PM_ID,
-      role: "campaign_manager",
-      status: "active",
-      phone: "+919000000001",
-      email: "reviewer@puzzlemedia.in",
-      phone_verified_at: addDays(t, -90),
-      email_verified_at: addDays(t, -90),
       timezone: "Asia/Kolkata",
       last_active_at: t,
       brand_id: null,

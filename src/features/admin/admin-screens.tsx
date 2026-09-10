@@ -34,7 +34,7 @@ export function AdminOverviewScreen() {
   if (isLoading || !data) return <CardSkeleton rows={2} />;
 
   const needsAttention = [
-    { label: "Submissions awaiting review", value: data.pendingReview, href: "/reviewer/queue" },
+    { label: "Submissions awaiting review", value: data.pendingReview, href: "/admin/review" },
     { label: "Live links to verify", value: data.unverifiedLinks, href: "/admin/live-posts" },
     { label: "SLA breaches open", value: data.openBreaches, href: "/admin/sla" },
     { label: "Profiles to review", value: data.pendingProfiles, href: "/admin/creators" },

@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  ClipboardCheck,
   ClipboardList,
   FileCheck2,
   Gauge,
@@ -24,6 +25,7 @@ interface NavLink {
   icon: ComponentType<{ className?: string }>;
 }
 
+/** Brand-side only. Puzzle Media reviews from the admin console. */
 const REVIEWER_NAV: NavLink[] = [
   { href: "/reviewer/queue", label: "Review queue", icon: ClipboardList },
   { href: "/reviewer/campaigns", label: "Campaigns", icon: Megaphone },
@@ -32,11 +34,12 @@ const REVIEWER_NAV: NavLink[] = [
 
 const ADMIN_NAV: NavLink[] = [
   { href: "/admin/overview", label: "Overview", icon: Gauge },
+  { href: "/admin/review", label: "Content review", icon: FileCheck2 },
   { href: "/admin/creators", label: "Creators", icon: Users },
   { href: "/admin/campaigns", label: "Campaigns", icon: Megaphone },
   { href: "/admin/sla", label: "SLA queue", icon: History },
   { href: "/admin/live-posts", label: "Live links", icon: Link2 },
-  { href: "/admin/metrics", label: "Metrics", icon: FileCheck2 },
+  { href: "/admin/metrics", label: "Metrics", icon: ClipboardCheck },
   { href: "/admin/earnings", label: "Earnings", icon: Wallet },
   { href: "/admin/audit", label: "Audit log", icon: ClipboardList },
 ];
@@ -67,7 +70,7 @@ export function DeskShell({
             P
           </span>
           <span className="font-display text-sm font-semibold">
-            {portal === "reviewer" ? "Review desk" : "Operations"}
+            {portal === "reviewer" ? "Brand desk" : "Operations"}
           </span>
         </div>
 
@@ -106,7 +109,7 @@ export function DeskShell({
               P
             </span>
             <span className="font-display text-sm font-semibold">
-              {portal === "reviewer" ? "Review desk" : "Operations"}
+              {portal === "reviewer" ? "Brand desk" : "Operations"}
             </span>
           </div>
           <nav

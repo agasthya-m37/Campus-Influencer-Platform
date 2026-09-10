@@ -18,8 +18,18 @@ import { deliverableStatus } from "@/lib/domain/status";
 import { REVIEW_STAGE_LABEL } from "@/lib/format/copy";
 import { formatCompact } from "@/lib/format/currency";
 
-/** F-REV-01. Grouped, and sorted by SLA remaining ascending by default. */
-export function ReviewQueueScreen() {
+/**
+ * F-REV-01. Grouped, and sorted by SLA remaining ascending by default.
+ *
+ * Shared by both portals: Puzzle Media reviews from the admin console, the
+ * brand from the reviewer desk. The API scopes the queue by role, so the
+ * only difference here is where the rows link to.
+ */
+export function ReviewQueueScreen({
+  basePath = "/reviewer/submissions",
+}: {
+  basePath?: string;
+} = {}) {
   const { data, isLoading, error, refetch } = useQuery(
     (signal) => api.reviewer.queue({ signal }),
     [],
@@ -101,7 +111,7 @@ export function ReviewQueueScreen() {
               <ul className="space-y-2">
                 {group.items.map((item) => (
                   <li key={item.version.id}>
-                    <QueueRow item={item} />
+                    <QueueRow item={item} basePath={basePath} />
                   </li>
                 ))}
               </ul>
@@ -113,10 +123,10 @@ export function ReviewQueueScreen() {
   );
 }
 
-function QueueRow({ item }: { item: ReviewQueueItem }) {
+function QueueRow({ item, basePath }: { item: ReviewQueueItem; basePath: string }) {
   return (
     <Link
-      href={`/reviewer/submissions/${item.version.id}`}
+      href={`${basePath}/${item.version.id}`}
       className="flex flex-col gap-3 rounded-lg border bg-card p-4 transition-colors hover:border-primary/40 sm:flex-row sm:items-center"
     >
       <div className="min-w-0 flex-1">

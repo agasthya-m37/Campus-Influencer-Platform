@@ -25,6 +25,7 @@ import type {
   DeliverableStatus,
   Id,
   Review,
+  ReviewStage,
   SubmissionVersion,
   Task,
   TaskType,
@@ -612,11 +613,11 @@ route("POST", "/deliverables/:id/submissions", ({ db, params, body }) => {
 
   notify(
     db,
-    "usr_pm",
+    "usr_admin",
     "task_due",
     `New ${deliverable.type} to review`,
     `${campaign.name} — version ${version.version_no}`,
-    `/reviewer/submissions/${version.id}`,
+    `/admin/review/${version.id}`,
   );
   audit(db, "submission.created", "submission_version", version.id);
 
@@ -1060,7 +1061,10 @@ route("GET", "/reviewer/queue", ({ db }) => {
     db.users.find((u) => u.id === userId),
     "User",
   );
-  const stage = user.role === "brand_reviewer" ? "brand" : "puzzle_media";
+  const stage: ReviewStage =
+    user.role === "brand_reviewer" || user.role === "brand_admin"
+      ? "brand"
+      : "puzzle_media";
 
   const scopedCampaignIds = new Set(
     db.campaignReviewers.filter((r) => r.user_id === userId).map((r) => r.campaign_id),
@@ -1113,7 +1117,10 @@ route("GET", "/reviewer/submissions/:id", ({ db, params }) => {
     db.users.find((u) => u.id === userId),
     "User",
   );
-  const stage = user.role === "brand_reviewer" ? "brand" : "puzzle_media";
+  const stage: ReviewStage =
+    user.role === "brand_reviewer" || user.role === "brand_admin"
+      ? "brand"
+      : "puzzle_media";
 
   const version = must(
     db.submissionVersions.find((v) => v.id === params.id),
