@@ -26,7 +26,7 @@ export function CreatorShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-dvh bg-background">
-      <header className="safe-top sticky top-0 z-30 border-b bg-surface/95 backdrop-blur-sm">
+      <header className="safe-top sticky top-0 z-30 border-b bg-surface">
         <div className="mx-auto flex h-14 max-w-3xl items-center justify-between gap-3 px-4">
           <Link href="/home" className="flex items-center gap-2">
             <span

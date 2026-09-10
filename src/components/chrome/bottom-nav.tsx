@@ -67,7 +67,7 @@ export function BottomNav({ taskCount = 0, unreadCount = 0 }: BottomNavProps) {
   return (
     <nav
       aria-label="Main"
-      className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t bg-surface/95 backdrop-blur-sm md:hidden"
+      className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t bg-surface md:hidden"
     >
       <ul className="mx-auto flex max-w-lg items-stretch">
         {items.map((item) => {
