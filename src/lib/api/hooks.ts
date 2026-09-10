@@ -51,7 +51,11 @@ export function useQuery<T>(
   const hasLoaded = useRef(false);
 
   const fetcherRef = useRef(fetcher);
-  fetcherRef.current = fetcher;
+  // Assigned in an effect rather than during render: writing a ref while
+  // rendering is unsafe once React can render concurrently.
+  useEffect(() => {
+    fetcherRef.current = fetcher;
+  });
 
   useEffect(() => {
     const controller = new AbortController();
@@ -117,7 +121,9 @@ export function useMutation<TInput, TOutput>(
   const keyRef = useRef<string | null>(null);
 
   const optionsRef = useRef(options);
-  optionsRef.current = options;
+  useEffect(() => {
+    optionsRef.current = options;
+  });
 
   const mutate = useCallback(
     async (input: TInput) => {

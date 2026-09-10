@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 
 import {
   createUploadSession,
@@ -20,46 +20,56 @@ const IDLE: UploadSnapshot = {
   canResume: false,
 };
 
-/** Binds an upload session to React without leaking timer state into render. */
+/**
+ * Binds an upload session to React.
+ *
+ * The session lives in state rather than a ref, so nothing reads mutable
+ * state during render — the session object itself is stable, and progress
+ * arrives through its own subscription.
+ */
 export function useUpload() {
-  const sessionRef = useRef<UploadSession | null>(null);
-  const [, force] = useState(0);
+  const [session, setSession] = useState<UploadSession | null>(null);
 
-  const subscribe = useCallback((listener: () => void) => {
-    return sessionRef.current?.subscribe(listener) ?? (() => {});
-  }, []);
-
-  const snapshot = useSyncExternalStore(
-    subscribe,
-    () => sessionRef.current?.snapshot() ?? IDLE,
-    () => IDLE,
+  const subscribe = useCallback(
+    (listener: () => void) => session?.subscribe(listener) ?? (() => {}),
+    [session],
   );
+
+  const getSnapshot = useCallback(
+    () => session?.snapshot() ?? IDLE,
+    [session],
+  );
+
+  const snapshot = useSyncExternalStore(subscribe, getSnapshot, () => IDLE);
 
   const begin = useCallback((file: File) => {
     const resumable = findResumable(file.name, file.size);
-    sessionRef.current = createUploadSession(
+    const next = createUploadSession(
       file,
       resumable ? { resumeFrom: resumable } : {},
     );
-    force((n) => n + 1);
-    sessionRef.current.start();
+    setSession(next);
+    next.start();
     return Boolean(resumable);
   }, []);
 
   const clear = useCallback(() => {
-    sessionRef.current?.abort();
-    sessionRef.current = null;
-    force((n) => n + 1);
-  }, []);
+    session?.abort();
+    setSession(null);
+  }, [session]);
 
-  return {
-    snapshot,
-    hasSession: sessionRef.current !== null,
-    objectUrl: sessionRef.current?.objectUrl() ?? null,
-    begin,
-    clear,
-    pause: () => sessionRef.current?.pause(),
-    resume: () => sessionRef.current?.resume(),
-    retry: () => sessionRef.current?.retry(),
-  };
+  return useMemo(
+    () => ({
+      snapshot,
+      hasSession: session !== null,
+      // Only meaningful once complete; null while uploading.
+      objectUrl: snapshot.status === "complete" ? session?.objectUrl() ?? null : null,
+      begin,
+      clear,
+      pause: () => session?.pause(),
+      resume: () => session?.resume(),
+      retry: () => session?.retry(),
+    }),
+    [snapshot, session, begin, clear],
+  );
 }

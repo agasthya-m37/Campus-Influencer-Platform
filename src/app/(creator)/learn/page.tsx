@@ -1,3 +1,4 @@
-export default function Page() {
-  return <p className="text-muted-foreground">Coming next.</p>;
-}
+import type { Metadata } from "next";
+import { LearnScreen } from "@/features/events/learn-screen";
+export const metadata: Metadata = { title: "Learn" };
+export default function Page() { return <LearnScreen />; }

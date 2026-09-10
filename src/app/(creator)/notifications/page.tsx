@@ -1,3 +1,4 @@
-export default function Page() {
-  return <p className="text-muted-foreground">Coming next.</p>;
-}
+import type { Metadata } from "next";
+import { NotificationsScreen } from "@/features/notifications/notifications-screen";
+export const metadata: Metadata = { title: "Updates" };
+export default function Page() { return <NotificationsScreen />; }

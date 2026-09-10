@@ -1,3 +1,4 @@
-export default function Page() {
-  return <p className="text-muted-foreground">Coming next.</p>;
-}
+import type { Metadata } from "next";
+import { AdminAuditScreen } from "@/features/admin/admin-screens";
+export const metadata: Metadata = { title: "Audit log" };
+export default function Page() { return <AdminAuditScreen />; }

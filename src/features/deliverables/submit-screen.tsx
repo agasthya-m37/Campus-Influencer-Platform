@@ -8,7 +8,6 @@ import { toast } from "sonner";
 
 import { DraftCounter } from "@/components/domain/draft-counter";
 import { GatingNotice } from "@/components/domain/gating-notice";
-import { SectionHeader } from "@/components/patterns/section";
 import { CardSkeleton, ErrorState } from "@/components/patterns/states";
 import { UploadProgress } from "@/components/patterns/upload-progress";
 import { Button } from "@/components/ui/button";

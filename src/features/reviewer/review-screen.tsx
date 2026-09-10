@@ -15,14 +15,6 @@ import { StatusPill } from "@/components/patterns/status-pill";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -218,7 +210,6 @@ export function ReviewScreen({ submissionId }: { submissionId: string }) {
                     <div key={file.id} className="space-y-2">
                       <p className="text-sm font-medium">{file.name}</p>
                       {file.url && (
-                        // eslint-disable-next-line jsx-a11y/media-has-caption
                         <video
                           src={file.url}
                           controls

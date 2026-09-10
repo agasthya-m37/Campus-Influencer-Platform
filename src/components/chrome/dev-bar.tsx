@@ -77,9 +77,12 @@ export function DevBar() {
   const [scenarios, setScenarios] = useState<Scenarios>(getScenarios);
   const [mounted, setMounted] = useState(false);
 
+  useEffect(() => subscribeScenarios(() => setScenarios({ ...getScenarios() })), []);
+
+  // Deferred so the theme label matches after hydration without a flash.
   useEffect(() => {
-    setMounted(true);
-    return subscribeScenarios(() => setScenarios({ ...getScenarios() }));
+    const id = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(id);
   }, []);
 
   if (process.env.NODE_ENV === "production") return null;
