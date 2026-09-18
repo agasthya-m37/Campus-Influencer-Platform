@@ -42,3 +42,8 @@ next-env.d.ts
 
 # Local agent settings, specific to one machine
 .claude/settings.local.json
+
+# Design sources. The PSD is 28MB against a 1.8MB repo, and git stores
+# binaries whole on every revision. Keep it in shared storage, not here.
+# The colours and measurements taken from it live in src/app/globals.css.
+docs/*.psd
