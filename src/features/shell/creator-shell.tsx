@@ -9,6 +9,7 @@ import { DevBar } from "@/features/shell/dev-bar";
 import { api } from "@/lib/api/client";
 import { useQuery } from "@/lib/api/hooks";
 import { openTasks } from "@/lib/domain/tasks";
+import { BrandGlyph } from "@/components/chrome/brand-mark";
 
 /**
  * The creator portal's chrome. Mobile first: a compact top bar and the
@@ -29,12 +30,7 @@ export function CreatorShell({ children }: { children: ReactNode }) {
       <header className="safe-top sticky top-0 z-30 border-b bg-surface">
         <div className="mx-auto flex h-14 max-w-3xl items-center justify-between gap-3 px-4">
           <Link href="/home" className="flex items-center gap-2">
-            <span
-              className="flex size-7 items-center justify-center rounded-md bg-primary font-display text-sm font-bold text-primary-foreground"
-              aria-hidden
-            >
-              P
-            </span>
+            <BrandGlyph size={28} />
             <span className="font-display text-base font-semibold tracking-tight">
               Puzzle Campus
             </span>

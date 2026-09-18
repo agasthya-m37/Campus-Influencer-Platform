@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -57,9 +58,14 @@ export function LoginScreen() {
       )}
 
       <p className="border-t-[1.5px] border-dashed border-border pt-5 text-caption leading-relaxed text-muted-foreground">
-        New here? Download <span className="font-semibold text-foreground">On The House</span>{" "}
-        from the App Store to apply. Puzzle Media reviews every application by
-        hand.
+        New here?{" "}
+        <Link
+          href="/signup"
+          className="font-semibold text-primary underline underline-offset-2"
+        >
+          Create your creator account
+        </Link>
+        .
       </p>
     </div>
   );

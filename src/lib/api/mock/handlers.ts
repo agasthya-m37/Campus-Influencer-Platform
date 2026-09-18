@@ -349,6 +349,103 @@ route("POST", "/auth/password/login", ({ db, body }) => {
 });
 
 /**
+ * Create a creator account.
+ *
+ * Mirrors the backend's split: the credential lands on the `auth_user`
+ * equivalent, and a `creator` row hangs off it one-to-one. The profile is
+ * created empty and unsubmitted, so `needsOnboarding` is true and the caller
+ * hands straight off to the eight-step wizard.
+ *
+ * Signing up does not make somebody an approved creator. `verification_status`
+ * stays pending until a person at Puzzle Media reviews the finished profile.
+ */
+route("POST", "/auth/signup", ({ db, body }) => {
+  const fullName = String(body.fullName ?? "").trim();
+  const email = String(body.email ?? "").trim().toLowerCase();
+  const phone = String(body.phone ?? "").trim();
+  const password = String(body.password ?? "");
+
+  const fields: Record<string, string> = {};
+  if (fullName.length < 2) fields.fullName = "Tell us your name.";
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    fields.email = "Enter a valid email address.";
+  }
+  if (!/^[6-9]\d{9}$/.test(phone)) {
+    fields.phone = "Enter a 10-digit mobile number starting 6, 7, 8 or 9.";
+  }
+  if (password.length < 8) fields.password = "Use at least 8 characters.";
+  if (Object.keys(fields).length > 0) {
+    throw new ApiError("validation", "Check your details.", { fields });
+  }
+
+  // Both are unique in the schema, so both are checked. Unlike login, saying
+  // "this email is taken" is correct here: the person is trying to claim it.
+  if (db.users.some((u) => (u.email ?? "").toLowerCase() === email)) {
+    throw new ApiError("validation", "That email already has an account.", {
+      fields: { email: "That email already has an account. Sign in instead." },
+    });
+  }
+  if (db.users.some((u) => u.phone === `+91${phone}`)) {
+    throw new ApiError("validation", "That number already has an account.", {
+      fields: { phone: "That number already has an account. Sign in instead." },
+    });
+  }
+
+  const userId = newId("usr");
+  const user: (typeof db.users)[number] = {
+    id: userId,
+    role: "creator",
+    status: "pending_review",
+    phone: `+91${phone}`,
+    email,
+    phone_verified_at: null,
+    email_verified_at: null,
+    timezone: "Asia/Kolkata",
+    last_active_at: nowIso(),
+    brand_id: null,
+  };
+  db.users.push(user);
+  db.credentials[userId] = password;
+
+  db.creatorProfiles.push({
+    id: newId("crp"),
+    user_id: userId,
+    display_name: fullName,
+    photo: null,
+    dob: null,
+    college_id: null,
+    city_id: null,
+    course: null,
+    year: null,
+    grad_year: null,
+    bio: null,
+    languages: [],
+    categories: [],
+    formats: [],
+    availability: null,
+    brand_preferences: [],
+    completeness_score: 0,
+    verification_status: "pending_review",
+    submitted_at: null,
+    reviewed_at: null,
+    review_note: null,
+  });
+
+  // Seed the wizard's draft with what we already know, so the first step is
+  // pre-filled rather than asking for the name a second time.
+  db.profileDrafts[userId] = {
+    step: "identity",
+    values: { display_name: fullName },
+    savedAt: nowIso(),
+  };
+
+  db.session.userId = userId;
+  audit(db, "creator.signed_up", "user", userId);
+
+  return { user, needsOnboarding: true };
+});
+
+/**
  * Password reset is stubbed deliberately. It always reports success, because
  * telling someone "no account with that email" is the same account-discovery
  * leak the login handler above avoids.

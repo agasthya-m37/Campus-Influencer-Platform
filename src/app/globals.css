@@ -423,6 +423,29 @@
   }
 }
 
+/* ==========================================================================
+   GROUND VARIANTS
+   The artwork uses two light grounds, and the split is meaningful: cream is
+   the brand's *marketing* surface (login, signup, onboarding), near-white
+   grid is the *working* surface (dashboards, queues, tables). Opting a route
+   group in is a single class on its shell rather than a token override, so
+   the two never drift apart.
+   ========================================================================== */
+.ground-cream {
+  --background: var(--pm-paper-200);
+  --surface-sunken: var(--pm-paper-300);
+  --grid-line: #e7dccb;
+  background-color: var(--background);
+}
+
+.dark .ground-cream {
+  /* Cream has no dark equivalent; fall back to the standard dark ground so
+     the brand does not invent a muddy brown nobody designed. */
+  --background: var(--pm-ink-950);
+  --surface-sunken: var(--pm-ink-950);
+  --grid-line: var(--pm-grid-dark);
+}
+
 @layer utilities {
   /* Mandatory on currency, counts and metrics. JetBrains Mono is already
      monospaced, but this also covers the display face in stat tiles. */

@@ -18,6 +18,7 @@ import type { ComponentType, ReactNode } from "react";
 
 import { DevBar } from "@/features/shell/dev-bar";
 import { cn } from "@/lib/utils";
+import { BrandGlyph } from "@/components/chrome/brand-mark";
 
 interface NavLink {
   href: string;
@@ -63,12 +64,7 @@ export function DeskShell({
     <div className="min-h-dvh bg-surface-sunken lg:flex" data-density="compact">
       <aside className="hidden w-60 shrink-0 flex-col border-r bg-sidebar lg:flex">
         <div className="flex h-14 items-center gap-2 border-b px-4">
-          <span
-            className="flex size-7 items-center justify-center rounded-md bg-primary font-display text-sm font-bold text-primary-foreground"
-            aria-hidden
-          >
-            P
-          </span>
+          <BrandGlyph size={28} />
           <span className="font-display text-sm font-semibold">
             {portal === "reviewer" ? "Brand desk" : "Operations"}
           </span>
@@ -102,12 +98,7 @@ export function DeskShell({
         {/* Below lg the sidebar collapses into a scrollable strip. */}
         <header className="sticky top-0 z-30 border-b bg-surface lg:hidden">
           <div className="flex h-14 items-center gap-2 px-4">
-            <span
-              className="flex size-7 items-center justify-center rounded-md bg-primary font-display text-sm font-bold text-primary-foreground"
-              aria-hidden
-            >
-              P
-            </span>
+            <BrandGlyph size={28} />
             <span className="font-display text-sm font-semibold">
               {portal === "reviewer" ? "Brand desk" : "Operations"}
             </span>

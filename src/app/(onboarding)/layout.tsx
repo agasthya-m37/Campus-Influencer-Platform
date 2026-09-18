@@ -1,6 +1,7 @@
 import type { Viewport } from "next";
 
 import { SessionProvider } from "@/features/auth/session";
+import { BrandGlyph } from "@/components/chrome/brand-mark";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -13,15 +14,10 @@ export const viewport: Viewport = {
 export default function OnboardingLayout({ children }: LayoutProps<"/">) {
   return (
     <SessionProvider>
-      <div className="min-h-dvh bg-background">
+      <div className="ground-cream min-h-dvh bg-background">
         <header className="safe-top border-b bg-surface">
           <div className="mx-auto flex h-14 max-w-4xl items-center gap-2 px-4">
-            <span
-              className="flex size-7 items-center justify-center rounded-md bg-primary font-display text-sm font-bold text-primary-foreground"
-              aria-hidden
-            >
-              P
-            </span>
+            <BrandGlyph size={28} />
             <span className="font-display text-base font-semibold tracking-tight">
               Puzzle Campus
             </span>

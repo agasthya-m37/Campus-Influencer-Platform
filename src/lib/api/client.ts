@@ -196,6 +196,12 @@ export const api = {
         { email, password },
         opts,
       ),
+    /** Creates a creator account and signs them in, ready for onboarding. */
+    signup: (
+      input: { fullName: string; email: string; phone: string; password: string },
+      opts?: RequestOptions,
+    ) =>
+      post<{ user: User; needsOnboarding: boolean }>("/auth/signup", input, opts),
     forgotPassword: (email: string, opts?: RequestOptions) =>
       post<{ sent: boolean }>("/auth/password/forgot", { email }, opts),
     logout: (opts?: RequestOptions) => post<{ ok: true }>("/auth/logout", {}, opts),
