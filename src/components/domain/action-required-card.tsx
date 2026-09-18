@@ -31,7 +31,7 @@ export function ActionRequiredCard({ view, className }: ActionRequiredCardProps)
       className={cn(
         "relative overflow-hidden rounded-lg border-2 p-4",
         view.isOverdue
-          ? "border-status-danger-border bg-status-danger-bg/30"
+          ? "border-status-danger-border bg-status-danger-bg"
           : "border-energy-border bg-energy-bg",
         className,
       )}

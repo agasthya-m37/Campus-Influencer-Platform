@@ -195,6 +195,17 @@ export function seedDatabase(): Database {
     },
   ];
 
+  /**
+   * Demo credentials. Every seeded account signs in with the same password so
+   * the login page is walkable without a lookup table; the email is what
+   * decides which portal you land in.
+   */
+  db.credentials = {
+    [CREATOR_ID]: "puzzle1234",
+    [REVIEWER_BRAND_ID]: "puzzle1234",
+    usr_admin: "puzzle1234",
+  };
+
   db.session = { userId: CREATOR_ID };
 
   /* Creator profile */

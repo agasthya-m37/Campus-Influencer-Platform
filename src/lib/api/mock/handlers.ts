@@ -296,6 +296,73 @@ route("POST", "/auth/otp/verify", ({ db, body }) => {
   };
 });
 
+/**
+ * Email and password sign-in.
+ *
+ * The backend schema puts email and password on Django's `auth_user`, with
+ * `creator` hanging off it one-to-one. This mirrors that: the credential is
+ * checked against the user record, and the creator profile is only consulted
+ * afterwards to decide where to send them.
+ *
+ * Demo passwords live in the seed rather than being hashed, because there is
+ * no server here to hash against. When the real backend lands this handler
+ * is deleted wholesale, not ported.
+ */
+route("POST", "/auth/password/login", ({ db, body }) => {
+  const email = String(body.email ?? "").trim().toLowerCase();
+  const password = String(body.password ?? "");
+
+  const fields: Record<string, string> = {};
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    fields.email = "Enter the email address you signed up with.";
+  }
+  if (password.length < 8) {
+    fields.password = "Passwords are at least 8 characters.";
+  }
+  if (Object.keys(fields).length > 0) {
+    throw new ApiError("validation", "Check your details.", { fields });
+  }
+
+  const user = db.users.find((u) => (u.email ?? "").toLowerCase() === email);
+
+  // Same message whether the email is unknown or the password is wrong, so
+  // the form cannot be used to discover which addresses have accounts.
+  const WRONG = "That email and password do not match.";
+  if (!user || (db.credentials[user.id] ?? null) !== password) {
+    throw new ApiError("validation", WRONG, {
+      fields: { password: WRONG },
+    });
+  }
+
+  if (user.status === "suspended" || user.status === "rejected") {
+    throw new ApiError("forbidden", "This account cannot sign in. Contact Puzzle Media.");
+  }
+
+  db.session.userId = user.id;
+  user.last_active_at = nowIso();
+  const profile = db.creatorProfiles.find((p) => p.user_id === user.id);
+
+  return {
+    user,
+    needsOnboarding: user.role === "creator" && !profile?.submitted_at,
+  };
+});
+
+/**
+ * Password reset is stubbed deliberately. It always reports success, because
+ * telling someone "no account with that email" is the same account-discovery
+ * leak the login handler above avoids.
+ */
+route("POST", "/auth/password/forgot", ({ body }) => {
+  const email = String(body.email ?? "").trim().toLowerCase();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    throw new ApiError("validation", "Enter a valid email address.", {
+      fields: { email: "Enter a valid email address." },
+    });
+  }
+  return { sent: true };
+});
+
 route("POST", "/auth/logout", ({ db }) => {
   db.session.userId = null;
   return { ok: true };

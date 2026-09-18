@@ -70,7 +70,7 @@ export function NotificationsScreen() {
                 }}
                 className={cn(
                   "block rounded-lg border p-4 transition-colors hover:border-primary/40",
-                  notification.read_at ? "bg-card" : "border-energy-border bg-energy-bg/40",
+                  notification.read_at ? "bg-card" : "border-energy-border bg-energy-bg",
                 )}
               >
                 <div className="flex items-start gap-3">

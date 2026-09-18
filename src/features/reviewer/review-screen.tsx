@@ -183,7 +183,7 @@ export function ReviewScreen({
             {clock && <SlaCountdown view={slaView(clock)} />}
           </div>
         </div>
-        <div className="rounded-md border border-status-info-border bg-status-info-bg/40 px-3 py-2">
+        <div className="rounded-md border border-status-info-border bg-status-info-bg px-3 py-2">
           <p className="text-sm font-medium text-status-info-fg">
             {REVIEW_STAGE_LABEL[stage]}
           </p>
@@ -239,7 +239,7 @@ export function ReviewScreen({
             <SectionHeader title="Your decision" />
 
             {isLastDraft && (
-              <p className="rounded-md border border-status-warn-border bg-status-warn-bg/50 p-3 text-sm text-status-warn-fg">
+              <p className="rounded-md border border-status-warn-border bg-status-warn-bg p-3 text-sm text-status-warn-fg">
                 This is the creator&rsquo;s last draft. Requesting changes now will
                 reject the deliverable unless Puzzle Media grants another round.
               </p>
@@ -328,7 +328,7 @@ export function ReviewScreen({
 
                     {/* The reviewer decides at reject time whether this ends
                         the creator's participation on the campaign. */}
-                    <div className="flex items-start gap-3 rounded-md border border-status-danger-border bg-status-danger-bg/30 p-3">
+                    <div className="flex items-start gap-3 rounded-md border border-status-danger-border bg-status-danger-bg p-3">
                       <Checkbox
                         id="ends"
                         checked={endsParticipation}

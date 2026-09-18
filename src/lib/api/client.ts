@@ -189,6 +189,15 @@ export const api = {
         { phone, code },
         opts,
       ),
+    /** Email and password, per the backend's auth_user model. */
+    login: (email: string, password: string, opts?: RequestOptions) =>
+      post<{ user: User; needsOnboarding: boolean }>(
+        "/auth/password/login",
+        { email, password },
+        opts,
+      ),
+    forgotPassword: (email: string, opts?: RequestOptions) =>
+      post<{ sent: boolean }>("/auth/password/forgot", { email }, opts),
     logout: (opts?: RequestOptions) => post<{ ok: true }>("/auth/logout", {}, opts),
     /** Dev affordance so all three portals are walkable without real auth. */
     switchUser: (userId: Id, opts?: RequestOptions) =>

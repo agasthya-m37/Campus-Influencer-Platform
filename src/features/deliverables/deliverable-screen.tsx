@@ -107,7 +107,7 @@ export function DeliverableScreen({ deliverableId }: { deliverableId: string }) 
 
       {/* Two-stage review is visible: the creator knows who has it now. */}
       {stage && (deliverable.status === "submitted" || deliverable.status === "under_review") && (
-        <div className="rounded-lg border border-status-info-border bg-status-info-bg/40 p-4">
+        <div className="rounded-lg border border-status-info-border bg-status-info-bg p-4">
           <p className="font-medium text-status-info-fg">{REVIEW_STAGE_LABEL[stage]}</p>
           <p className="mt-1 text-sm text-muted-foreground">{REVIEW_STAGE_HELP[stage]}</p>
         </div>
@@ -141,7 +141,7 @@ export function DeliverableScreen({ deliverableId }: { deliverableId: string }) 
       )}
 
       {deliverable.status === "approved" && (
-        <div className="rounded-lg border border-status-success-border bg-status-success-bg/40 p-4">
+        <div className="rounded-lg border border-status-success-border bg-status-success-bg p-4">
           <p className="font-medium text-status-success-fg">Approved</p>
           <p className="mt-1 text-sm text-muted-foreground">
             {isVideo

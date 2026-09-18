@@ -110,7 +110,7 @@ export function GoLiveScreen({ deliverableId }: { deliverableId: string }) {
       </section>
 
       {alreadySubmitted ? (
-        <section className="rounded-lg border border-status-success-border bg-status-success-bg/40 p-4">
+        <section className="rounded-lg border border-status-success-border bg-status-success-bg p-4">
           <p className="font-medium text-status-success-fg">Link received</p>
           <p className="mt-1 text-sm break-all">{livePost.url}</p>
           <p className="mt-2 text-sm text-muted-foreground">
@@ -155,7 +155,7 @@ export function GoLiveScreen({ deliverableId }: { deliverableId: string }) {
           </p>
 
           {submit.fieldErrors && (
-            <div role="alert" className="rounded-lg border border-status-danger-border bg-status-danger-bg/40 p-4">
+            <div role="alert" className="rounded-lg border border-status-danger-border bg-status-danger-bg p-4">
               {Object.values(submit.fieldErrors).map((message) => (
                 <p key={message} className="text-sm text-status-danger-fg">
                   {message}

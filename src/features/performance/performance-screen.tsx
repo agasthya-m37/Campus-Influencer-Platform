@@ -111,7 +111,7 @@ function PostPerformance({ row, now }: { row: PerformanceRow; now: Date }) {
 
       {/* The countdown, so a screen with no final numbers never reads as broken. */}
       {!isSettled && (
-        <div className="rounded-lg border border-status-info-border bg-status-info-bg/40 p-4">
+        <div className="rounded-lg border border-status-info-border bg-status-info-bg p-4">
           <div className="flex items-baseline justify-between gap-3">
             <p className="font-medium text-status-info-fg">
               Final results in {formatCountdown(untilSettled)}

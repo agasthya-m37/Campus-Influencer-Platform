@@ -67,6 +67,11 @@ export interface Database {
   taxonomy: TaxonomyItem[];
   /** Draft profile state for the onboarding wizard's auto-save. */
   profileDrafts: Record<Id, { step: string; values: Record<string, unknown>; savedAt: string }>;
+  /**
+   * Demo passwords, keyed by user id. Deliberately not on the User type: the
+   * real API never returns a credential, and the type should not imply it can.
+   */
+  credentials: Record<Id, string>;
   session: { userId: Id | null };
 }
 
@@ -98,6 +103,7 @@ export function emptyDatabase(): Database {
     auditLog: [],
     taxonomy: [],
     profileDrafts: {},
+    credentials: {},
     session: { userId: null },
   };
 }

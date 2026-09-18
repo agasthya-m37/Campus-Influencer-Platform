@@ -124,7 +124,7 @@ function CampaignRow({ row }: { row: CampaignListItem }) {
       href={`/campaigns/${campaign.id}`}
       className={cn(
         "block rounded-lg border bg-card p-4 transition-colors hover:border-primary/40",
-        isInvite && "border-energy-border bg-energy-bg/40",
+        isInvite && "border-energy-border bg-energy-bg",
       )}
     >
       <div className="flex items-start justify-between gap-3">

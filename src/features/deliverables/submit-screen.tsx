@@ -146,7 +146,7 @@ export function SubmitScreen({ deliverableId }: { deliverableId: string }) {
       </header>
 
       {lastFeedback && (
-        <section className="rounded-lg border border-status-warn-border bg-status-warn-bg/40 p-4">
+        <section className="rounded-lg border border-status-warn-border bg-status-warn-bg p-4">
           <h2 className="text-caption font-semibold tracking-wide uppercase text-status-warn-fg">
             What the reviewer asked for
           </h2>
@@ -266,7 +266,7 @@ export function SubmitScreen({ deliverableId }: { deliverableId: string }) {
       )}
 
       {submit.fieldErrors && (
-        <div role="alert" className="rounded-lg border border-status-danger-border bg-status-danger-bg/40 p-4">
+        <div role="alert" className="rounded-lg border border-status-danger-border bg-status-danger-bg p-4">
           {Object.values(submit.fieldErrors).map((message) => (
             <p key={message} className="text-sm text-status-danger-fg">
               {message}

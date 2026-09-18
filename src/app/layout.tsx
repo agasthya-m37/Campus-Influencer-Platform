@@ -1,34 +1,33 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, Familjen_Grotesk, Martian_Mono } from "next/font/google";
+import { Archivo_Black, JetBrains_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/chrome/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import "./globals.css";
 
-/** Display. The optical-size axis lets one family serve a 32px campaign
- *  title and a 13px table header without reading as two fonts. */
-const bricolage = Bricolage_Grotesque({
+/**
+ * Display. The brand artwork sets headlines in Arial Black, which is a system
+ * font with no web licence and no variable axes. Archivo Black is the closest
+ * self-hostable match: same grotesque skeleton, same single ultra-heavy
+ * weight, and it holds the tight tracking the artwork relies on.
+ */
+const archivo = Archivo_Black({
   subsets: ["latin"],
-  variable: "--font-bricolage",
+  variable: "--font-archivo",
   display: "swap",
-  axes: ["opsz"],
+  weight: "400",
 });
 
-/** Body. Narrower than Inter with a taller x-height, which is what you
- *  want at 360px where horizontal space is the scarce resource. */
-const familjen = Familjen_Grotesk({
+/**
+ * Body, UI and numerals. JetBrains Mono throughout, per the brand reference.
+ * Monospace for body text is unusual and deliberate here: it is what makes
+ * the product look like the artwork. It runs wide, which is why the type
+ * scale below leans smaller than a proportional face would need.
+ */
+const jetbrains = JetBrains_Mono({
   subsets: ["latin"],
-  variable: "--font-familjen",
+  variable: "--font-jetbrains",
   display: "swap",
-});
-
-/** Scoped narrowly to countdowns, version numbers and ids. A ticking
- *  countdown in a proportional font jitters; mono holds its width. */
-const martian = Martian_Mono({
-  subsets: ["latin"],
-  variable: "--font-martian",
-  display: "swap",
-  weight: ["400", "500"],
 });
 
 export const metadata: Metadata = {
@@ -47,8 +46,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fbfaf7" },
-    { media: "(prefers-color-scheme: dark)", color: "#131211" },
+    { media: "(prefers-color-scheme: light)", color: "#fefefe" },
+    { media: "(prefers-color-scheme: dark)", color: "#0d170f" },
   ],
 };
 
@@ -57,7 +56,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn(bricolage.variable, familjen.variable, martian.variable)}
+      className={cn(archivo.variable, jetbrains.variable)}
     >
       <body className="min-h-dvh bg-background font-sans text-foreground antialiased">
         <ThemeProvider>
