@@ -32,6 +32,7 @@ export function BrandLockup({
       width={width}
       height={height}
       priority={priority}
+      unoptimized
       className={cn("h-auto", className)}
     />
   );
@@ -51,6 +52,7 @@ export function BrandGlyph({
       aria-hidden
       width={size}
       height={size}
+      unoptimized
       className={cn("shrink-0", className)}
     />
   );
