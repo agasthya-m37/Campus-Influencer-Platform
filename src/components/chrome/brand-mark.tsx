@@ -3,6 +3,15 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 /**
+ * Both marks are `unoptimized`, which means Next serves the src verbatim
+ * rather than routing it through the image loader — and the loader is what
+ * normally applies basePath. On GitHub Pages the app is served from a
+ * subpath, so these two srcs have to carry it themselves or they 404 at the
+ * domain root. Empty in development, where there is no basePath.
+ */
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
+/**
  * The Puzzle Media logo.
  *
  * Two forms, because the lockup does not survive being shrunk: the cube with
@@ -27,7 +36,7 @@ export function BrandLockup({
 
   return (
     <Image
-      src="/brand/logo.png"
+      src={`${BASE}/brand/logo.png`}
       alt="Puzzle Media"
       width={width}
       height={height}
@@ -47,7 +56,7 @@ export function BrandGlyph({
 }) {
   return (
     <Image
-      src="/brand/mark.png"
+      src={`${BASE}/brand/mark.png`}
       alt=""
       aria-hidden
       width={size}

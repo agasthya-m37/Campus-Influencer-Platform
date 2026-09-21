@@ -9,6 +9,16 @@ const isPages = process.env.GITHUB_PAGES === "true";
 const repo = "/Campus-Influencer-Platform";
 
 const nextConfig: NextConfig = {
+  /**
+   * `unoptimized` images bypass the image loader, and with it the automatic
+   * basePath prefixing, so their src must carry the prefix itself. Exposed
+   * as a public env var because the components need it at runtime and
+   * next.config is not importable from client code.
+   */
+  env: {
+    NEXT_PUBLIC_BASE_PATH: isPages ? repo : "",
+  },
+
   ...(isPages
     ? {
         output: "export",
