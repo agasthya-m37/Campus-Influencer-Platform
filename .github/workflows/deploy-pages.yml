@@ -1,0 +1,66 @@
+name: Deploy to GitHub Pages
+
+# Builds the static export and publishes it. Runs on every push to main, and
+# can be triggered by hand from the Actions tab.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Pages deployment needs these; `id-token` is what lets the deploy step prove
+# it came from this workflow rather than anywhere else.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time. A queued run is not cancelled, so a deploy already in
+# flight finishes rather than leaving the site half-published.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      # The same checks that guard a local commit, so a broken build never
+      # reaches the demo URL.
+      - name: Verify
+        run: npm run verify
+
+      - name: Build static export
+        run: npx next build
+        env:
+          GITHUB_PAGES: "true"
+
+      # Pages runs the output through Jekyll by default, which strips any
+      # directory beginning with an underscore — including Next's _next.
+      - name: Disable Jekyll processing
+        run: touch out/.nojekyll
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
