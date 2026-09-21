@@ -31,13 +31,13 @@ jobs:
           node-version: 24
           cache: npm
 
-      # --omit=optional skips sharp and the other native binaries. The lock
-      # file was generated on macOS, so it cannot record the Linux-only
-      # packages those pull in, and `npm ci` refuses a tree it cannot verify.
-      # Nothing here needs them: the static export sets images.unoptimized,
-      # so Next never reaches for sharp.
+      # `npm install`, not `npm ci`. The lock file is generated on macOS and
+      # cannot record the Linux-only packages that Next's optional `sharp`
+      # dependency pulls in, so `npm ci` rejects it on this runner whatever
+      # --omit flags it is given. `npm install` resolves those for the
+      # platform it is on and otherwise honours the committed lock file.
       - name: Install
-        run: npm ci --omit=optional
+        run: npm install --no-audit --no-fund
 
       # The same checks that guard a local commit, so a broken build never
       # reaches the demo URL.
