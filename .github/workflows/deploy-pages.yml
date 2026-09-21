@@ -39,15 +39,20 @@ jobs:
       - name: Install
         run: npm install --no-audit --no-fund
 
-      # The same checks that guard a local commit, so a broken build never
-      # reaches the demo URL.
-      - name: Verify
-        run: npm run verify
-
+      # Build first. Next generates the PageProps and LayoutProps types into
+      # .next/types during a build, and tsconfig includes them, so a
+      # typecheck on a clean checkout fails on every route file until they
+      # exist.
       - name: Build static export
         run: npx next build
         env:
           GITHUB_PAGES: "true"
+
+      # The same checks that guard a local commit. These run after the build
+      # rather than before it, so a regression still fails the workflow and
+      # blocks the deploy — the deploy job only runs if this job succeeds.
+      - name: Verify
+        run: npm run verify
 
       # Pages runs the output through Jekyll by default, which strips any
       # directory beginning with an underscore — including Next's _next.
