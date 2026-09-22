@@ -17,6 +17,10 @@ const nextConfig: NextConfig = {
    */
   env: {
     NEXT_PUBLIC_BASE_PATH: isPages ? repo : "",
+    // The Pages build is a showcase with no real backend or auth, so the
+    // role-switcher and scenario toggles are worth keeping instead of
+    // hiding behind the NODE_ENV=production check meant for a real deploy.
+    NEXT_PUBLIC_SHOW_DEV_TOOLS: isPages ? "true" : "",
   },
 
   ...(isPages

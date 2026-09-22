@@ -97,14 +97,21 @@ export function DevBar() {
     () => SERVER_SCENARIOS,
   );
   const [mounted, setMounted] = useState(false);
+  const [isFramed, setIsFramed] = useState(false);
 
   // Deferred so the theme label matches after hydration without a flash.
   useEffect(() => {
-    const id = requestAnimationFrame(() => setMounted(true));
+    const id = requestAnimationFrame(() => {
+      setIsFramed(new URLSearchParams(window.location.search).get("embedded") === "phone");
+      setMounted(true);
+    });
     return () => cancelAnimationFrame(id);
   }, []);
 
-  if (process.env.NODE_ENV === "production") return null;
+  const showInProduction = process.env.NEXT_PUBLIC_SHOW_DEV_TOOLS === "true";
+  if ((process.env.NODE_ENV === "production" && !showInProduction) || !mounted || isFramed) {
+    return null;
+  }
 
   const activeCount = Object.values(scenarios).filter(Boolean).length;
 
