@@ -7,37 +7,35 @@ import { navItems, type NavItemsInput } from "@/components/chrome/nav-items";
 import { cn } from "@/lib/utils";
 
 /**
- * F-DASH-05. Persistent, five items, unread badges.
- * Every target is at least 44px tall, and the bar respects the iOS home
- * indicator via safe-area inset. Mobile only — see `TopNav` for md+.
+ * The same five destinations as `BottomNav`, inline in the header instead of
+ * fixed to the viewport bottom — this is the only way to navigate at md+,
+ * where the bottom nav hides itself (`md:hidden`). Without this, widening
+ * past the mobile breakpoint left the app with no navigation at all.
  */
-export function BottomNav({ taskCount = 0, unreadCount = 0, level }: NavItemsInput) {
+export function TopNav({ taskCount = 0, unreadCount = 0, level }: NavItemsInput) {
   const pathname = usePathname();
   const items = navItems({ taskCount, unreadCount, level });
 
   return (
-    <nav
-      aria-label="Main"
-      className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t bg-surface md:hidden"
-    >
-      <ul className="mx-auto flex max-w-lg items-stretch">
+    <nav aria-label="Main" className="hidden md:block">
+      <ul className="flex items-center gap-1">
         {items.map((item) => {
           const active = item.match(pathname);
           const Icon = item.icon;
           return (
-            <li key={item.href} className="flex-1">
+            <li key={item.href}>
               <Link
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "relative flex min-h-[56px] flex-col items-center justify-center gap-1 px-1 py-2 transition-colors",
+                  "relative flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium transition-colors",
                   active
-                    ? "text-primary"
-                    : "text-muted-foreground hover:text-foreground",
+                    ? "bg-muted text-primary"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
                 )}
               >
                 <span className="relative">
-                  <Icon className="size-5" aria-hidden />
+                  <Icon className="size-4" aria-hidden />
                   {item.badge ? (
                     <span
                       className="absolute -top-1.5 -right-2 flex min-w-4 items-center justify-center rounded-full bg-energy px-1 text-[10px] leading-4 font-semibold text-background tabular"
@@ -54,20 +52,12 @@ export function BottomNav({ taskCount = 0, unreadCount = 0, level }: NavItemsInp
                     </span>
                   ) : null}
                 </span>
-                <span className="text-[11px] leading-none font-medium">
-                  {item.label}
-                  {item.badge ? (
-                    <span className="sr-only">, {item.badge} pending</span>
-                  ) : item.levelBadge ? (
-                    <span className="sr-only">, level {item.levelBadge}</span>
-                  ) : null}
-                </span>
-                {active && (
-                  <span
-                    className="absolute inset-x-4 top-0 h-0.5 rounded-full bg-primary"
-                    aria-hidden
-                  />
-                )}
+                {item.label}
+                {item.badge ? (
+                  <span className="sr-only">, {item.badge} pending</span>
+                ) : item.levelBadge ? (
+                  <span className="sr-only">, level {item.levelBadge}</span>
+                ) : null}
               </Link>
             </li>
           );

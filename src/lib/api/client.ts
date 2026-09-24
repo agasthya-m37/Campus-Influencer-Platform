@@ -91,6 +91,16 @@ export interface CampaignListItem {
   deliverables: Deliverable[];
 }
 
+/**
+ * An open-application campaign the creator is eligible for but has not yet
+ * applied to or been invited to — there is no `CampaignAssignment` yet, so
+ * this shape carries only the campaign and brand, unlike `CampaignListItem`.
+ */
+export interface DiscoverableCampaign {
+  campaign: Campaign;
+  brand: Brand;
+}
+
 export interface CampaignDetail {
   campaign: Campaign;
   brand: Brand;
@@ -230,6 +240,14 @@ export const api = {
     list: (opts?: RequestOptions) =>
       get<{ items: CampaignListItem[]; nextCursor: string | null }>("/campaigns", opts),
     get: (id: Id, opts?: RequestOptions) => get<CampaignDetail>(`/campaigns/${id}`, opts),
+    /** Open-application campaigns the creator is eligible for and has no
+     *  assignment on yet — the second source feeding the discovery deck. */
+    discoverable: (opts?: RequestOptions) =>
+      get<{ items: DiscoverableCampaign[] }>("/campaigns/discoverable", opts),
+    /** Applies to an open-application campaign, creating a new assignment
+     *  with participation_status "applied". */
+    apply: (id: Id, opts?: RequestOptions) =>
+      post<CampaignAssignment>(`/campaigns/${id}/apply`, {}, opts),
   },
 
   assignments: {

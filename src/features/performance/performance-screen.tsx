@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, ExternalLink } from "lucide-react";
+import { BarChart3, ExternalLink, Trophy, Zap } from "lucide-react";
 import { useState } from "react";
 
 import { MetricTile } from "@/components/domain/metric-tile";
@@ -10,9 +10,17 @@ import { Progress } from "@/components/ui/progress";
 import { api, type PerformanceRow } from "@/lib/api/client";
 import { messageFor } from "@/lib/api/errors";
 import { useQuery } from "@/lib/api/hooks";
+import { performanceTier, type PerformanceTier } from "@/lib/domain/gamification";
 import { METRICS_PENDING_EXPLAINER, METRICS_WINDOW_DAYS } from "@/lib/format/copy";
 import { addDays, durationBetween, formatCountdown, formatDate } from "@/lib/format/datetime";
+import { cn } from "@/lib/utils";
 import type { MetricSnapshot } from "@/lib/types";
+
+const TIER_CLASS: Record<PerformanceTier, string> = {
+  bronze: "bg-[var(--pm-orange-100)] text-[var(--pm-orange-800)] border-[var(--pm-orange-200)]",
+  silver: "bg-status-neutral-bg text-status-neutral-fg border-status-neutral-border",
+  gold: "bg-[var(--pm-lime-200)] text-ink border-ink",
+};
 
 export function PerformanceScreen() {
   // Sampled once per mount so every tile on the page agrees on "now".
@@ -34,6 +42,18 @@ export function PerformanceScreen() {
 
   const rows = data?.items ?? [];
 
+  // Personal bests, computed across every post this creator has live results
+  // for — the same numbers each PostPerformance card already reads, just
+  // reduced to a max so a stand-out post can be called out.
+  const bestEngagementRate = rows.reduce((best, row) => {
+    const rate = engagementRateOf(row);
+    return rate !== null ? Math.max(best, rate) : best;
+  }, 0);
+  const bestReach = rows.reduce((best, row) => {
+    const reach = row.snapshots.find((s) => s.metric_type === "reach");
+    return reach ? Math.max(best, reach.value) : best;
+  }, 0);
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -52,7 +72,18 @@ export function PerformanceScreen() {
       ) : (
         <div className="space-y-8">
           {rows.map((row) => (
-            <PostPerformance key={row.livePost.id} row={row} now={now} />
+            <PostPerformance
+              key={row.livePost.id}
+              row={row}
+              now={now}
+              isBestEngagement={
+                bestEngagementRate > 0 && engagementRateOf(row) === bestEngagementRate
+              }
+              isBestReach={
+                bestReach > 0 &&
+                row.snapshots.find((s) => s.metric_type === "reach")?.value === bestReach
+              }
+            />
           ))}
         </div>
       )}
@@ -60,7 +91,24 @@ export function PerformanceScreen() {
   );
 }
 
-function PostPerformance({ row, now }: { row: PerformanceRow; now: Date }) {
+function engagementRateOf(row: PerformanceRow): number | null {
+  const engagements = row.snapshots.find((s) => s.metric_type === "engagements");
+  const reach = row.snapshots.find((s) => s.metric_type === "reach");
+  if (!engagements || !reach || reach.value === 0) return null;
+  return (engagements.value / reach.value) * 100;
+}
+
+function PostPerformance({
+  row,
+  now,
+  isBestEngagement,
+  isBestReach,
+}: {
+  row: PerformanceRow;
+  now: Date;
+  isBestEngagement: boolean;
+  isBestReach: boolean;
+}) {
   const { livePost, campaign, brand, snapshots } = row;
 
   const settlesAt = addDays(livePost.published_at, METRICS_WINDOW_DAYS);
@@ -91,6 +139,9 @@ function PostPerformance({ row, now }: { row: PerformanceRow; now: Date }) {
         ),
       );
 
+  const rate = engagementRateOf(row);
+  const tier = rate !== null ? performanceTier(rate) : null;
+
   return (
     <section className="space-y-3">
       <SectionHeader
@@ -109,11 +160,42 @@ function PostPerformance({ row, now }: { row: PerformanceRow; now: Date }) {
         }
       />
 
+      {(tier || isBestEngagement || isBestReach) && (
+        <div className="flex flex-wrap items-center gap-2">
+          {tier && (
+            <span
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full border-[1.5px] px-2.5 py-1 text-sm font-semibold",
+                TIER_CLASS[tier.tier],
+              )}
+            >
+              <Zap className="size-3.5" aria-hidden />
+              {tier.label}
+            </span>
+          )}
+          {isBestEngagement && (
+            <span className="inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-ink bg-[var(--pm-lime-500)] px-2.5 py-1 text-sm font-semibold text-ink">
+              <Trophy className="size-3.5" aria-hidden />
+              Personal best · engagement rate
+            </span>
+          )}
+          {isBestReach && (
+            <span className="inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-ink bg-[var(--pm-lime-500)] px-2.5 py-1 text-sm font-semibold text-ink">
+              <Trophy className="size-3.5" aria-hidden />
+              Personal best · reach
+            </span>
+          )}
+        </div>
+      )}
+
       {/* The countdown, so a screen with no final numbers never reads as broken. */}
       {!isSettled && (
-        <div className="rounded-lg border border-status-info-border bg-status-info-bg p-4">
+        <div className="card-hard rounded-[var(--radius-lg)] border-[var(--brand-energy-border)] bg-[var(--brand-energy-bg)] p-4">
           <div className="flex items-baseline justify-between gap-3">
-            <p className="font-medium text-status-info-fg">
+            {/* Icon carries the energy colour; the label itself stays on
+                foreground ink so the text keeps full AA contrast. */}
+            <p className="inline-flex items-center gap-1.5 font-medium text-foreground">
+              <Zap className="size-4 text-[var(--brand-energy)]" aria-hidden />
               Final results in {formatCountdown(untilSettled)}
             </p>
             <p className="font-mono text-caption tabular text-muted-foreground">
@@ -121,7 +203,10 @@ function PostPerformance({ row, now }: { row: PerformanceRow; now: Date }) {
               {METRICS_WINDOW_DAYS}
             </p>
           </div>
-          <Progress value={elapsedFraction * 100} className="mt-3 h-1.5" />
+          <Progress
+            value={elapsedFraction * 100}
+            className="mt-3 h-1.5 [&>[data-slot=progress-indicator]]:bg-[var(--brand-energy)]"
+          />
           <p className="mt-2 text-sm text-muted-foreground">
             {METRICS_PENDING_EXPLAINER}
           </p>

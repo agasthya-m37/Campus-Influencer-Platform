@@ -17,9 +17,17 @@ import { formatMoney } from "@/lib/format/currency";
 import { formatRelativeDeadline } from "@/lib/format/datetime";
 import { cn } from "@/lib/utils";
 
-type Filter = "active" | "invitations" | "past";
+type Filter = "active" | "invited" | "past";
 
-const PENDING: Array<CampaignListItem["assignment"]["participation_status"]> = [
+/**
+ * Everything still awaiting a creator decision or an outcome: the plain
+ * invitations that also appear on the home discover deck, plus applications
+ * and offers further along (applied, shortlisted, selected, assigned).
+ * Showing "invited" here too is deliberate duplication with the deck —
+ * the deck is for swiping through new invites quickly, this tab is for
+ * finding a specific one again without hunting through the deck.
+ */
+const INVITED: Array<CampaignListItem["assignment"]["participation_status"]> = [
   "invited",
   "applied",
   "shortlisted",
@@ -47,15 +55,14 @@ export function CampaignsScreen() {
   const all = data?.items ?? [];
   const counts = {
     active: all.filter((c) => isWorking(c.assignment.participation_status)).length,
-    invitations: all.filter((c) => PENDING.includes(c.assignment.participation_status))
-      .length,
+    invited: all.filter((c) => INVITED.includes(c.assignment.participation_status)).length,
     past: all.filter((c) => isTerminal(c.assignment.participation_status)).length,
   };
 
   const visible = all.filter((c) => {
     const status = c.assignment.participation_status;
     if (filter === "active") return isWorking(status);
-    if (filter === "invitations") return PENDING.includes(status);
+    if (filter === "invited") return INVITED.includes(status);
     return isTerminal(status);
   });
 
@@ -68,8 +75,8 @@ export function CampaignsScreen() {
           <TabsTrigger value="active" className="flex-1">
             Active {counts.active > 0 && `(${counts.active})`}
           </TabsTrigger>
-          <TabsTrigger value="invitations" className="flex-1">
-            Invites {counts.invitations > 0 && `(${counts.invitations})`}
+          <TabsTrigger value="invited" className="flex-1">
+            Invited {counts.invited > 0 && `(${counts.invited})`}
           </TabsTrigger>
           <TabsTrigger value="past" className="flex-1">
             Past {counts.past > 0 && `(${counts.past})`}
@@ -83,14 +90,14 @@ export function CampaignsScreen() {
         <EmptyState
           icon={<Megaphone className="size-6" />}
           title={
-            filter === "invitations"
+            filter === "invited"
               ? "No invitations right now"
               : filter === "active"
                 ? "No active campaigns"
                 : "Nothing here yet"
           }
           description={
-            filter === "invitations"
+            filter === "invited"
               ? "Puzzle Media invites you when a brand matches your profile."
               : undefined
           }

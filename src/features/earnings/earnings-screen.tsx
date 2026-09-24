@@ -1,7 +1,10 @@
 "use client";
 
-import { Info, Wallet } from "lucide-react";
+import { Info, Trophy, Wallet } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { toast } from "sonner";
 
+import { QuestTracker, type QuestCheckpoint } from "@/components/domain/quest-tracker";
 import { PageHeader, SectionHeader } from "@/components/patterns/section";
 import { CardSkeleton, EmptyState, ErrorState } from "@/components/patterns/states";
 import { StatusPill } from "@/components/patterns/status-pill";
@@ -20,6 +23,13 @@ const GATE_LABEL: Record<EarningGate, string> = {
   metrics_submitted: "Results added",
   finance_approved: "Finance approved",
 };
+
+const ALL_GATES: EarningGate[] = [
+  "content_approved",
+  "link_verified",
+  "metrics_submitted",
+  "finance_approved",
+];
 
 /**
  * F-EARN. A report, not a transaction. The three headline strings are fixed
@@ -119,16 +129,45 @@ function EarningCard({ row }: { row: EarningRow }) {
   const amount = earning?.amount ?? assignment.fee_amount ?? 0;
   const status = earning?.status ?? assignment.payment_status;
   const gates = earning?.gates_met ?? [];
+  const allCleared = ALL_GATES.every((g) => gates.includes(g));
 
-  const allGates: EarningGate[] = [
-    "content_approved",
-    "link_verified",
-    "metrics_submitted",
-    "finance_approved",
-  ];
+  // Celebrate the moment the last gate clears, once per assignment per tab
+  // session — not on every render, and not for rows that were already fully
+  // gated the first time this screen was seen.
+  const celebratedRef = useRef(false);
+  useEffect(() => {
+    if (!allCleared || celebratedRef.current) return;
+    celebratedRef.current = true;
+    const key = `pm.earnings-gate.celebrated.${assignment.id}`;
+    try {
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, "1");
+    } catch {
+      return;
+    }
+    toast.success("All gates cleared", {
+      description: `${campaign.name} has cleared every earning checkpoint.`,
+      icon: <Trophy className="size-4" aria-hidden />,
+    });
+  }, [allCleared, assignment.id, campaign.name]);
+
+  const checkpoints: QuestCheckpoint[] = ALL_GATES.map((gate) => ({
+    id: gate,
+    label: GATE_LABEL[gate],
+    state: gates.includes(gate) ? "done" : "locked",
+  }));
+  // The first not-yet-met gate reads as "current" rather than flatly locked.
+  const firstOpenIndex = checkpoints.findIndex((c) => c.state === "locked");
+  if (firstOpenIndex !== -1) checkpoints[firstOpenIndex].state = "current";
 
   return (
-    <article className="rounded-lg border bg-card p-4">
+    <article
+      className={
+        allCleared
+          ? "card-hard-on-light on-light-fill rounded-[var(--radius-lg)] bg-[var(--pm-lime-200)] p-4"
+          : "rounded-lg border bg-card p-4"
+      }
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="font-medium">{campaign.name}</p>
@@ -139,6 +178,12 @@ function EarningCard({ row }: { row: EarningRow }) {
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <StatusPill size="sm" status={paymentStatus(status)} />
+        {allCleared && status !== "paid" && (
+          <span className="inline-flex items-center gap-1 rounded-full border-[1.5px] border-ink bg-[var(--pm-lime-500)] px-2 py-0.5 text-caption font-semibold text-ink">
+            <Trophy className="size-3" aria-hidden />
+            All gates cleared
+          </span>
+        )}
         {earning?.updated_at && (
           <span className="text-caption text-muted-foreground">
             Updated {formatDate(earning.updated_at)}
@@ -148,28 +193,9 @@ function EarningCard({ row }: { row: EarningRow }) {
 
       {/* The gates make "why am I not paid yet" answerable without asking. */}
       {status !== "paid" && (
-        <ul className="mt-3 space-y-1.5 border-t pt-3">
-          {allGates.map((gate) => {
-            const met = gates.includes(gate);
-            return (
-              <li key={gate} className="flex items-center gap-2 text-sm">
-                <span
-                  className={
-                    met
-                      ? "text-status-success-fg"
-                      : "text-muted-foreground"
-                  }
-                  aria-hidden
-                >
-                  {met ? "✓" : "○"}
-                </span>
-                <span className={met ? "" : "text-muted-foreground"}>
-                  {GATE_LABEL[gate]}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
+        <div className="mt-3 border-t pt-3">
+          <QuestTracker checkpoints={checkpoints} />
+        </div>
       )}
 
       {earning?.status_reason && (

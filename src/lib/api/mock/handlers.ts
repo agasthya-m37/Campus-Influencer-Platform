@@ -16,7 +16,7 @@ import { newId, nowIso, store, type Database } from "@/lib/api/mock/store";
 import { seedDatabase } from "@/lib/api/mock/seed";
 import { canSubmit, draftBudget, ownerForStatus } from "@/lib/domain/deliverables";
 import { applyDecision, validateDecision } from "@/lib/domain/review";
-import { allowedTransitions } from "@/lib/domain/participation";
+import { allowedTransitions, matchesEligibility } from "@/lib/domain/participation";
 import { SLA_DEFAULT_HOURS, startsClock } from "@/lib/domain/sla";
 import { addHours } from "@/lib/format/datetime";
 import type {
@@ -545,6 +545,35 @@ route("GET", "/campaigns", ({ db }) => {
   return { items, nextCursor: null };
 });
 
+/**
+ * Open-application campaigns the creator is eligible for and does not
+ * already have an assignment on — the second source feeding the discovery
+ * deck alongside `/campaigns` invitations. No `CampaignAssignment` exists
+ * yet for these, so the response carries only `Campaign` + `Brand`.
+ */
+route("GET", "/campaigns/discoverable", ({ db }) => {
+  const userId = currentUserId(db);
+  const profile = db.creatorProfiles.find((p) => p.user_id === userId);
+  if (!profile) return { items: [] };
+
+  const socialAccounts = db.socialAccounts.filter((s) => s.creator_id === profile.id);
+  const alreadyAssigned = new Set(
+    db.assignments.filter((a) => a.creator_id === userId).map((a) => a.campaign_id),
+  );
+
+  const items = db.campaigns
+    .filter((c) => c.participation_mode === "open_application")
+    .filter((c) => c.status === "active" || c.status === "published")
+    .filter((c) => !alreadyAssigned.has(c.id))
+    .filter((c) => matchesEligibility(c.eligibility_rules, profile, socialAccounts))
+    .map((campaign) => ({
+      campaign,
+      brand: db.brands.find((b) => b.id === campaign.brand_id)!,
+    }));
+
+  return { items };
+});
+
 route("GET", "/campaigns/:id", ({ db, params }) => {
   const campaign = must(
     db.campaigns.find((c) => c.id === params.id),
@@ -593,6 +622,51 @@ function transitionAssignment(
   assignment.participation_status = to;
   audit(db, `assignment.${to}`, "campaign_assignment", assignment.id, reason);
 }
+
+/**
+ * Applies to an open-application campaign, creating a new assignment.
+ *
+ * Mirrors `assignments/:id/accept` in shape, but there is no existing
+ * assignment to transition here — the campaign is only reachable this way
+ * before one exists. Follows the OPEN_APPLICATION machine (§participation):
+ * the initial state after a creator's own action is "applied".
+ */
+route("POST", "/campaigns/:id/apply", ({ db, params }) => {
+  const userId = currentUserId(db);
+  const campaign = must(
+    db.campaigns.find((c) => c.id === params.id),
+    "Campaign",
+  );
+
+  if (campaign.participation_mode !== "open_application") {
+    throw new ApiError("conflict", "This campaign is not open for applications.");
+  }
+  if (db.assignments.some((a) => a.campaign_id === campaign.id && a.creator_id === userId)) {
+    throw new ApiError("conflict", "You have already applied to this campaign.");
+  }
+
+  const assignment: CampaignAssignment = {
+    id: newId("asg"),
+    campaign_id: campaign.id,
+    creator_id: userId,
+    participation_status: "applied",
+    fee_amount: null,
+    fee_currency: "INR",
+    barter_value: null,
+    visible_to_creator: true,
+    invited_at: null,
+    accept_by: null,
+    accepted_at: null,
+    withdrawn_at: null,
+    withdrawn_reason: null,
+    payment_status: "not_eligible",
+    replaces_assignment_id: null,
+  };
+  db.assignments.push(assignment);
+  audit(db, "assignment.applied", "campaign_assignment", assignment.id);
+
+  return assignment;
+});
 
 route("POST", "/assignments/:id/accept", ({ db, params }) => {
   const userId = currentUserId(db);

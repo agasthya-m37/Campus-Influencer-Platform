@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowLeft, Ban, Check, CircleAlert, FileText, Video } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -32,6 +33,7 @@ import { deliverableStatus, participationStatus } from "@/lib/domain/status";
 import { DELIVERABLE_TYPE_LABEL } from "@/lib/domain/deliverables";
 import { formatMoney } from "@/lib/format/currency";
 import { formatDateTime, formatRelativeDeadline } from "@/lib/format/datetime";
+import { cn } from "@/lib/utils";
 
 export function CampaignDetailScreen({ campaignId }: { campaignId: string }) {
   const router = useRouter();
@@ -100,14 +102,38 @@ export function CampaignDetailScreen({ campaignId }: { campaignId: string }) {
     ? formatRelativeDeadline(assignment.accept_by)
     : null;
 
+  const hasStickyActions = canAccept || canDecline || canWithdraw;
+
   return (
-    <div className="space-y-6">
+    // Extra bottom padding when the sticky action bar is present: the shell's
+    // own pb-24 only clears the fixed bottom nav, not this screen's own
+    // sticky bar stacked above it, so the last section (the brief) was
+    // scrolling in behind the "Withdraw"/"Accept" button instead of past it.
+    <div className={cn("space-y-6", hasStickyActions && "pb-20")}>
       <Button asChild variant="ghost" size="sm" className="-ml-2">
         <Link href="/campaigns">
           <ArrowLeft className="size-4" aria-hidden />
           Campaigns
         </Link>
       </Button>
+
+      {/* Same photo the discovery deck and go-live/detail sheets use — this
+          page is often reached straight from the deck, so the campaign
+          should still look like the same campaign, not switch to a
+          text-only treatment once you are past the swipe step. */}
+      {campaign.image && (
+        <div className="-mt-2 aspect-[16/9] w-full overflow-hidden rounded-lg bg-muted">
+          <Image
+            src={campaign.image}
+            alt=""
+            aria-hidden
+            width={800}
+            height={450}
+            unoptimized
+            className="size-full object-cover"
+          />
+        </div>
+      )}
 
       <header>
         <p className="text-sm text-muted-foreground">{brand.name}</p>
@@ -159,22 +185,28 @@ export function CampaignDetailScreen({ campaignId }: { campaignId: string }) {
         <SectionHeader title="What you will make" />
         <ul className="space-y-2">
           {deliverables.map((d) => (
-            <li
-              key={d.id}
-              className="flex items-center gap-3 rounded-lg border bg-card p-4"
-            >
-              {d.type === "video" ? (
-                <Video className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-              ) : (
-                <FileText className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-              )}
-              <div className="min-w-0 flex-1">
-                <p className="font-medium">{DELIVERABLE_TYPE_LABEL[d.type]}</p>
-                <p className="mt-0.5 text-caption text-muted-foreground">
-                  Due {formatDateTime(d.due_at)}
-                </p>
-              </div>
-              <StatusPill size="sm" status={deliverableStatus(d.status)} />
+            <li key={d.id}>
+              {/* Tap through to the deliverable's own screen — that's where
+                  the real submit/resubmit action lives (e.g. "Submit draft 2"
+                  after changes are requested). This row used to be a dead
+                  end: a status pill you could look at but not act on. */}
+              <Link
+                href={`/deliverables/${d.id}`}
+                className="flex items-center gap-3 rounded-lg border bg-card p-4 transition-colors hover:border-primary/40"
+              >
+                {d.type === "video" ? (
+                  <Video className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                ) : (
+                  <FileText className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium">{DELIVERABLE_TYPE_LABEL[d.type]}</p>
+                  <p className="mt-0.5 text-caption text-muted-foreground">
+                    Due {formatDateTime(d.due_at)}
+                  </p>
+                </div>
+                <StatusPill size="sm" status={deliverableStatus(d.status)} />
+              </Link>
             </li>
           ))}
         </ul>
@@ -207,9 +239,12 @@ export function CampaignDetailScreen({ campaignId }: { campaignId: string }) {
         </div>
       </section>
 
-      {/* Actions come last: the creator has read everything by this point. */}
+      {/* Actions come last: the creator has read everything by this point.
+          No border/shadow of its own — the buttons already carry the app's
+          pill-with-hard-shadow styling, and framing them in a second bordered
+          box double-drew the same rectangle around a single button. */}
       {(canAccept || canDecline || canWithdraw) && (
-        <section className="sticky bottom-20 space-y-3 rounded-lg border bg-surface p-4 shadow-md md:bottom-4">
+        <section className="sticky bottom-20 space-y-3 bg-surface p-4 md:bottom-4">
           {canAccept && acceptDeadline && (
             <p className="text-sm text-muted-foreground">
               Respond by {formatDateTime(assignment!.accept_by!)} ·{" "}

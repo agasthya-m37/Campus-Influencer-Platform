@@ -4,14 +4,27 @@ import { AtSign, Check, LogOut, Moon, Play, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 
+import { AchievementBadge } from "@/components/domain/achievement-badge";
+import { StreakIndicator } from "@/components/domain/streak-indicator";
+import { XpBar } from "@/components/domain/xp-bar";
 import { PageHeader, SectionHeader } from "@/components/patterns/section";
 import { CardSkeleton, ErrorState } from "@/components/patterns/states";
+import {
+  Avatar,
+  AvatarBadge,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { api } from "@/lib/api/client";
 import { messageFor } from "@/lib/api/errors";
 import { useQuery } from "@/lib/api/hooks";
+import {
+  computeAchievements,
+  computeStreak,
+  levelProgress,
+} from "@/lib/domain/gamification";
 import { formatHandle } from "@/lib/format/copy";
 import { formatCompact } from "@/lib/format/currency";
 import { formatFull } from "@/lib/format/datetime";
@@ -36,6 +49,12 @@ export function ProfileScreen() {
     (signal) => api.me.get({ signal }),
     [],
   );
+  // These already back other screens (Dashboard, Tasks, Performance) — reused
+  // here rather than re-fetched with different shapes, so level/streak/
+  // achievements never disagree between screens.
+  const tasksQuery = useQuery((signal) => api.tasks.list({ signal }), []);
+  const campaignsQuery = useQuery((signal) => api.campaigns.list({ signal }), []);
+  const performanceQuery = useQuery((signal) => api.performance.list({ signal }), []);
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -55,36 +74,93 @@ export function ProfileScreen() {
   if (isLoading || !data) return <CardSkeleton rows={3} />;
 
   const { user, profile, socialAccounts, consents } = data;
+  const tasks = tasksQuery.data ?? [];
+  const campaigns = campaignsQuery.data?.items ?? [];
+  const performanceRows = performanceQuery.data?.items ?? [];
+
+  const streak = computeStreak(tasks);
+  const progress = profile
+    ? levelProgress(
+        profile.completeness_score,
+        tasks,
+        campaigns.map((c) => c.assignment),
+      )
+    : null;
+
+  // Same "best engagement rate among this creator's own posts" heuristic the
+  // performance screen's tiers are built on — self-best, not a leaderboard.
+  const bestEngagementRate = performanceRows.reduce((best, row) => {
+    const engagements = row.snapshots.find((s) => s.metric_type === "engagements");
+    const reach = row.snapshots.find((s) => s.metric_type === "reach");
+    if (!engagements || !reach || reach.value === 0) return best;
+    return Math.max(best, (engagements.value / reach.value) * 100);
+  }, 0);
+
+  const achievements = profile
+    ? computeAchievements({
+        completenessScore: profile.completeness_score,
+        completedTasks: tasks.filter((t) => t.status === "completed").length,
+        completedCampaigns: campaigns.filter(
+          (c) => c.assignment.participation_status === "completed",
+        ).length,
+        streakDays: streak.currentDays,
+        isTopPerformerThisWeek: bestEngagementRate >= 8,
+      })
+    : [];
 
   return (
     <div className="space-y-6">
       <PageHeader title="Profile" />
 
-      {profile && (
+      {profile && progress && (
         <>
           <section className="rounded-lg border bg-card p-4">
-            <h2 className="font-display text-h1">{profile.display_name}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {profile.course} · Year {profile.year} · Graduating {profile.grad_year}
-            </p>
+            <div className="flex items-start gap-4">
+              <Avatar size="lg" className="shrink-0">
+                <AvatarImage src={profile.photo ?? undefined} alt="" />
+                <AvatarFallback>
+                  {profile.display_name.slice(0, 1).toUpperCase()}
+                </AvatarFallback>
+                <AvatarBadge
+                  className="text-[9px] font-bold"
+                  aria-label={`Level ${progress.current.level}`}
+                >
+                  {progress.current.level}
+                </AvatarBadge>
+              </Avatar>
+              <div className="min-w-0 flex-1">
+                <h2 className="font-display text-h1">{profile.display_name}</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {profile.course} · Year {profile.year} · Graduating {profile.grad_year}
+                </p>
+              </div>
+              <StreakIndicator days={streak.currentDays} size="sm" className="shrink-0" />
+            </div>
             <p className="mt-3 text-sm">{profile.bio}</p>
           </section>
 
           <section className="space-y-3">
-            <SectionHeader title="Profile completeness" />
-            <div className="rounded-lg border bg-card p-4">
-              <div className="flex items-baseline justify-between">
-                <p className="font-medium">{profile.completeness_score}% complete</p>
-                <span className="font-mono text-sm tabular text-muted-foreground">
-                  {profile.completeness_score}/100
-                </span>
-              </div>
-              <Progress value={profile.completeness_score} className="mt-3 h-2" />
+            <SectionHeader title="Level up your profile" />
+            <div className="card-hard-on-light on-light-fill rounded-[var(--radius-lg)] bg-[var(--pm-lime-200)] p-4">
+              <XpBar progress={progress} />
               {profile.completeness_score < 100 && (
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Add your typical view count so brands can match you better.
+                <p className="mt-3 border-t border-ink/10 pt-3 text-sm">
+                  Add your typical view count so brands can match you better —
+                  and pick up the XP that comes with it.
                 </p>
               )}
+            </div>
+          </section>
+
+          <section className="space-y-3">
+            <SectionHeader
+              title="Achievements"
+              description={`${achievements.filter((a) => a.unlocked).length} of ${achievements.length} unlocked`}
+            />
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+              {achievements.map((achievement) => (
+                <AchievementBadge key={achievement.id} achievement={achievement} />
+              ))}
             </div>
           </section>
         </>

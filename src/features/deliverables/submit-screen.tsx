@@ -275,7 +275,7 @@ export function SubmitScreen({ deliverableId }: { deliverableId: string }) {
         </div>
       )}
 
-      <div className="sticky bottom-20 rounded-lg border bg-surface p-4 shadow-md md:bottom-4">
+      <div className="sticky bottom-20 bg-surface p-4 md:bottom-4">
         <Button
           size="lg"
           className="w-full"

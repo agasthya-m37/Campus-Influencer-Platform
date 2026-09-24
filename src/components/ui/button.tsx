@@ -8,17 +8,22 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground shadow-md hover:bg-primary/90",
+        // shadow-[var(--shadow-hard-on-light)] rather than shadow-md: a
+        // small, isolated pill shape reads as two nested outlines once the
+        // hard shadow flips to lime in dark mode (shadow-md's normal
+        // behavior) — buttons keep the ink shadow in every theme instead.
+        default:
+          "bg-primary text-primary-foreground shadow-[var(--shadow-hard-on-light)] hover:bg-primary/90",
         outline:
-          "border-ink bg-card text-foreground shadow-md hover:bg-muted aria-expanded:bg-muted",
+          "border-ink bg-card text-foreground shadow-[var(--shadow-hard-on-light)] hover:bg-muted aria-expanded:bg-muted",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-md hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)]",
+          "bg-secondary text-secondary-foreground shadow-[var(--shadow-hard-on-light)] hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)]",
         accent:
-          "bg-accent text-accent-foreground shadow-md hover:bg-[color-mix(in_oklch,var(--accent),var(--foreground)_6%)]",
+          "bg-accent text-accent-foreground shadow-[var(--shadow-hard-on-light)] hover:bg-[color-mix(in_oklch,var(--accent),var(--foreground)_6%)]",
         ghost:
           "border-transparent shadow-none hover:bg-muted hover:text-foreground aria-expanded:bg-muted",
         destructive:
-          "bg-destructive text-white shadow-md hover:bg-destructive/90 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
+          "bg-destructive text-white shadow-[var(--shadow-hard-on-light)] hover:bg-destructive/90 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
         link: "border-transparent shadow-none text-primary underline-offset-4 hover:underline",
       },
       size: {

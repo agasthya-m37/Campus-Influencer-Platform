@@ -465,6 +465,8 @@ export interface CampusEvent {
   rsvp_deadline: Iso;
   speaker_id: Id | null;
   resources: BriefResource[];
+  /** Cover image for the event card. Null falls back to an icon treatment. */
+  image: string | null;
 }
 
 export type RsvpState =

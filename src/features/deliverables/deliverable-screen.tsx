@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { DraftCounter } from "@/components/domain/draft-counter";
 import { GatingNotice } from "@/components/domain/gating-notice";
+import { QuestTracker, type QuestCheckpoint } from "@/components/domain/quest-tracker";
 import { SubmissionVersionTimeline } from "@/components/domain/version-timeline";
 import { OwnershipBadge } from "@/components/patterns/ownership-badge";
 import { SectionHeader } from "@/components/patterns/section";
@@ -23,9 +24,38 @@ import {
 import { currentStage } from "@/lib/domain/review";
 import { slaView } from "@/lib/domain/sla";
 import { deliverableStatus } from "@/lib/domain/status";
+import type { DeliverableStatus } from "@/lib/types";
 import { REVIEW_STAGE_HELP, REVIEW_STAGE_LABEL } from "@/lib/format/copy";
 import { formatDateTime } from "@/lib/format/datetime";
 import { toTimelineEntries } from "@/features/deliverables/mappers";
+
+/**
+ * Four checkpoints cover every deliverable status. `blocked`/`not_started`
+ * both read as "not started yet"; `changes_requested` folds back into
+ * "in production" so the rail never needs a fifth node for a loop back.
+ */
+const CHECKPOINT_RANK: Record<DeliverableStatus, number> = {
+  not_started: 0,
+  blocked: 0,
+  in_production: 0,
+  changes_requested: 0,
+  submitted: 1,
+  under_review: 1,
+  approved: 2,
+  live_link_submitted: 2,
+  link_verified: 3,
+  rejected: 1,
+};
+
+function questCheckpoints(status: DeliverableStatus): QuestCheckpoint[] {
+  const rank = CHECKPOINT_RANK[status];
+  const labels = ["Create your draft", "Submitted for review", "Approved", "Live and verified"];
+  return labels.map((label, i) => ({
+    id: label,
+    label,
+    state: i < rank ? "done" : i === rank ? "current" : "locked",
+  }));
+}
 
 export function DeliverableScreen({ deliverableId }: { deliverableId: string }) {
   const { data, isLoading, error, refetch } = useQuery(
@@ -104,6 +134,11 @@ export function DeliverableScreen({ deliverableId }: { deliverableId: string }) 
           </span>
         </div>
       </header>
+
+      <section className="card-hard rounded-[var(--radius-lg)] bg-card p-4">
+        <SectionHeader title="Your quest" className="mb-3" />
+        <QuestTracker checkpoints={questCheckpoints(deliverable.status)} />
+      </section>
 
       {/* Two-stage review is visible: the creator knows who has it now. */}
       {stage && (deliverable.status === "submitted" || deliverable.status === "under_review") && (

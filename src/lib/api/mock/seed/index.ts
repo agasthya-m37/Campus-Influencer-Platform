@@ -66,6 +66,17 @@ interface CampaignSpec {
   mode: Campaign["participation_mode"];
 }
 
+/**
+ * Deterministic placeholder photo per campaign, portrait-oriented to suit a
+ * swipe card. Seeded by campaign id so the same campaign always gets the
+ * same image across reloads. These are generic stock-style placeholders, not
+ * real brand photography — the seeded brands (ZenFit, Chai Point, etc.) are
+ * fictional demo brands.
+ */
+function placeholderImage(seed: string): string {
+  return `https://picsum.photos/seed/${seed}/800/1000`;
+}
+
 function campaignOf(spec: CampaignSpec, over: Partial<Campaign> = {}): Campaign {
   return {
     id: spec.id,
@@ -73,7 +84,7 @@ function campaignOf(spec: CampaignSpec, over: Partial<Campaign> = {}): Campaign 
     name: spec.name,
     objective: spec.objective,
     description: spec.summary,
-    image: null,
+    image: placeholderImage(spec.id),
     participation_mode: spec.mode,
     status: "active",
     eligibility_rules: {},
@@ -288,6 +299,25 @@ export function seedDatabase(): Database {
     { id: "brd_paytm", name: "Nova Pay", logo: null, guidelines_ref: null, status: "active" },
     { id: "brd_chai", name: "Chai Point", logo: null, guidelines_ref: null, status: "active" },
     { id: "brd_noise", name: "Noise Audio", logo: null, guidelines_ref: null, status: "active" },
+    { id: "brd_wanderlust", name: "Wanderlust Backpacks", logo: null, guidelines_ref: null, status: "active" },
+    { id: "brd_grindhouse", name: "Grindhouse Coffee Co.", logo: null, guidelines_ref: null, status: "active" },
+    { id: "brd_flexfuel", name: "FlexFuel Nutrition", logo: null, guidelines_ref: null, status: "active" },
+    { id: "brd_studybuddy", name: "StudyBuddy App", logo: null, guidelines_ref: null, status: "active" },
+    { id: "brd_glowlab", name: "GlowLab Skincare", logo: null, guidelines_ref: null, status: "active" },
+    { id: "brd_noise_labs", name: "Noise Labs", logo: null, guidelines_ref: null, status: "active" },
+    { id: "brd_hostel_eats", name: "Hostel Eats", logo: null, guidelines_ref: null, status: "active" },
+    { id: "brd_pagepilot", name: "PagePilot Notes", logo: null, guidelines_ref: null, status: "active" },
+    { id: "brd_cityhop", name: "CityHop Rentals", logo: null, guidelines_ref: null, status: "active" },
+    { id: "brd_brewbox", name: "BrewBox Cold Coffee", logo: null, guidelines_ref: null, status: "active" },
+    { id: "brd_thriftly", name: "Thriftly Campus Resale", logo: null, guidelines_ref: null, status: "active" },
+    { id: "brd_pulsefit", name: "PulseFit Wearables", logo: null, guidelines_ref: null, status: "active" },
+    { id: "brd_notenest", name: "NoteNest Stationery", logo: null, guidelines_ref: null, status: "active" },
+    { id: "brd_quickcab", name: "QuickCab Campus", logo: null, guidelines_ref: null, status: "active" },
+    { id: "brd_snackbox", name: "SnackBox Subscriptions", logo: null, guidelines_ref: null, status: "active" },
+    { id: "brd_sunscreenco", name: "SunscreenCo Daily SPF", logo: null, guidelines_ref: null, status: "active" },
+    { id: "brd_loopwear", name: "Loopwear Thrifted Streetwear", logo: null, guidelines_ref: null, status: "active" },
+    { id: "brd_focusbrew", name: "FocusBrew Nootropic Tea", logo: null, guidelines_ref: null, status: "active" },
+    { id: "brd_campuscart", name: "CampusCart Grocery Delivery", logo: null, guidelines_ref: null, status: "active" },
   ];
 
   db.campaignReviewers = [
@@ -298,6 +328,15 @@ export function seedDatabase(): Database {
     { campaign_id: "cmp_003", user_id: REVIEWER_PM_ID, sequence: 1, can_reassign: true },
     { campaign_id: "cmp_004", user_id: REVIEWER_PM_ID, sequence: 1, can_reassign: true },
     { campaign_id: "cmp_005", user_id: REVIEWER_PM_ID, sequence: 1, can_reassign: true },
+    { campaign_id: "cmp_006", user_id: REVIEWER_PM_ID, sequence: 1, can_reassign: true },
+    { campaign_id: "cmp_007", user_id: REVIEWER_PM_ID, sequence: 1, can_reassign: true },
+    { campaign_id: "cmp_008", user_id: REVIEWER_PM_ID, sequence: 1, can_reassign: true },
+    { campaign_id: "cmp_009", user_id: REVIEWER_PM_ID, sequence: 1, can_reassign: true },
+    { campaign_id: "cmp_010", user_id: REVIEWER_PM_ID, sequence: 1, can_reassign: true },
+    { campaign_id: "cmp_021", user_id: REVIEWER_PM_ID, sequence: 1, can_reassign: true },
+    { campaign_id: "cmp_022", user_id: REVIEWER_PM_ID, sequence: 1, can_reassign: true },
+    { campaign_id: "cmp_023", user_id: REVIEWER_PM_ID, sequence: 1, can_reassign: true },
+    { campaign_id: "cmp_024", user_id: REVIEWER_PM_ID, sequence: 1, can_reassign: true },
   ];
 
   /* ── Campaign 1: script needs revision (round 2 of 3) ─────────────── */
@@ -467,6 +506,560 @@ export function seedDatabase(): Database {
       current_owner_kind: "system",
       current_owner_id: null,
     }),
+  );
+
+  /* ── Campaigns 6–9: more pending invitations, so the discover deck has
+   *    a real stack to swipe through instead of a single card. ──────── */
+  db.campaigns.push(
+    campaignOf(
+      {
+        id: "cmp_006",
+        brandId: "brd_wanderlust",
+        name: "Wanderlust Weekend Carry",
+        objective: "Show the backpack surviving a real campus weekend trip",
+        summary: "A day-in-the-life reel packing for a short trip out of town.",
+        mode: "invitation",
+      },
+      { accept_by: addHours(t, 48), go_live_from: addDays(t, 10), go_live_to: addDays(t, 14) },
+    ),
+  );
+  db.assignments.push(
+    assignmentOf("asg_006", "cmp_006", {
+      participation_status: "invited",
+      fee_amount: rupees(4200),
+      invited_at: addHours(t, -6),
+      accept_by: addHours(t, 48),
+      accepted_at: null,
+    }),
+  );
+  db.deliverables.push(
+    deliverableOf("dlv_013", "asg_006", "script", {
+      status: "not_started",
+      requirements: "Pack the bag on camera, then show it on your back at least once outdoors.",
+      due_at: addDays(t, 5),
+    }),
+    deliverableOf("dlv_014", "asg_006", "video", {
+      status: "blocked",
+      blocked_by_deliverable_id: "dlv_013",
+      requirements: "Vertical 9:16, natural light preferred.",
+      due_at: addDays(t, 9),
+      current_owner_kind: "system",
+      current_owner_id: null,
+    }),
+  );
+
+  db.campaigns.push(
+    campaignOf(
+      {
+        id: "cmp_007",
+        brandId: "brd_grindhouse",
+        name: "Grindhouse Late-Night Brew",
+        objective: "Reach students pulling late study sessions near campus cafes",
+        summary: "A quick taste-test and vibe check of the new cold brew line.",
+        mode: "invitation",
+      },
+      { accept_by: addHours(t, 20), go_live_from: addDays(t, 6), go_live_to: addDays(t, 9) },
+    ),
+  );
+  db.assignments.push(
+    assignmentOf("asg_007", "cmp_007", {
+      participation_status: "invited",
+      fee_amount: rupees(2800),
+      invited_at: addHours(t, -30),
+      accept_by: addHours(t, 20),
+      accepted_at: null,
+    }),
+  );
+  db.deliverables.push(
+    deliverableOf("dlv_015", "asg_007", "video", {
+      status: "not_started",
+      requirements: "Film in-store if possible, keep it under 30 seconds.",
+      due_at: addDays(t, 3),
+    }),
+  );
+
+  db.campaigns.push(
+    campaignOf(
+      {
+        id: "cmp_008",
+        brandId: "brd_flexfuel",
+        name: "FlexFuel Exam Season Stack",
+        objective: "Position the protein bar as a between-classes snack",
+        summary: "A quick campus-life reel showing the bar fitting into a packed day.",
+        mode: "invitation",
+      },
+      { accept_by: addHours(t, 72), go_live_from: addDays(t, 12), go_live_to: addDays(t, 16) },
+    ),
+  );
+  db.assignments.push(
+    assignmentOf("asg_008", "cmp_008", {
+      participation_status: "invited",
+      fee_amount: rupees(3200),
+      barter_value: rupees(800),
+      invited_at: addHours(t, -3),
+      accept_by: addHours(t, 72),
+      accepted_at: null,
+    }),
+  );
+  db.deliverables.push(
+    deliverableOf("dlv_016", "asg_008", "script", {
+      status: "not_started",
+      requirements: "Mention the bar naturally between two campus activities.",
+      due_at: addDays(t, 6),
+    }),
+    deliverableOf("dlv_017", "asg_008", "video", {
+      status: "blocked",
+      blocked_by_deliverable_id: "dlv_016",
+      requirements: "Vertical 9:16.",
+      due_at: addDays(t, 10),
+      current_owner_kind: "system",
+      current_owner_id: null,
+    }),
+  );
+
+  db.campaigns.push(
+    campaignOf(
+      {
+        id: "cmp_009",
+        brandId: "brd_studybuddy",
+        name: "StudyBuddy Finals Prep",
+        objective: "Drive downloads ahead of finals week",
+        summary: "A relatable reel about how you actually plan a study session.",
+        mode: "invitation",
+      },
+      { accept_by: addHours(t, 15), go_live_from: addDays(t, 5), go_live_to: addDays(t, 8) },
+    ),
+  );
+  db.assignments.push(
+    assignmentOf("asg_009", "cmp_009", {
+      participation_status: "invited",
+      fee_amount: null,
+      barter_value: null,
+      visible_to_creator: false,
+      invited_at: addHours(t, -10),
+      accept_by: addHours(t, 15),
+      accepted_at: null,
+    }),
+  );
+  db.deliverables.push(
+    deliverableOf("dlv_018", "asg_009", "video", {
+      status: "not_started",
+      requirements: "Keep it under 25 seconds, show the app's calendar view once.",
+      due_at: addDays(t, 4),
+    }),
+  );
+
+  db.campaigns.push(
+    campaignOf(
+      {
+        id: "cmp_010",
+        brandId: "brd_glowlab",
+        name: "GlowLab Morning Routine",
+        objective: "Build awareness of the new SPF moisturizer among students",
+        summary: "A get-ready-with-me clip working the moisturizer into your routine.",
+        mode: "invitation",
+      },
+      { accept_by: addHours(t, 60), go_live_from: addDays(t, 9), go_live_to: addDays(t, 13) },
+    ),
+  );
+  db.assignments.push(
+    assignmentOf("asg_010", "cmp_010", {
+      participation_status: "invited",
+      fee_amount: rupees(5000),
+      invited_at: addHours(t, -50),
+      accept_by: addHours(t, 60),
+      accepted_at: null,
+    }),
+  );
+  db.deliverables.push(
+    deliverableOf("dlv_019", "asg_010", "script", {
+      status: "not_started",
+      requirements: "Show the product texture on skin at least once, natural light.",
+      due_at: addDays(t, 7),
+    }),
+    deliverableOf("dlv_020", "asg_010", "video", {
+      status: "blocked",
+      blocked_by_deliverable_id: "dlv_019",
+      requirements: "Vertical 9:16.",
+      due_at: addDays(t, 11),
+      current_owner_kind: "system",
+      current_owner_id: null,
+    }),
+  );
+
+  /* ── Campaigns 21–24: a few more invitations, purely to give the demo
+   *    deck more variety to swipe/refresh through. ───────────────────── */
+  db.campaigns.push(
+    campaignOf(
+      {
+        id: "cmp_021",
+        brandId: "brd_sunscreenco",
+        name: "SunscreenCo Everyday SPF",
+        objective: "Normalize daily SPF for students who skip it",
+        summary: "A quick morning-routine reel working SPF into your actual routine.",
+        mode: "invitation",
+      },
+      { accept_by: addHours(t, 40), go_live_from: addDays(t, 8), go_live_to: addDays(t, 12) },
+    ),
+  );
+  db.assignments.push(
+    assignmentOf("asg_011", "cmp_021", {
+      participation_status: "invited",
+      fee_amount: rupees(3800),
+      invited_at: addHours(t, -14),
+      accept_by: addHours(t, 40),
+      accepted_at: null,
+    }),
+  );
+  db.deliverables.push(
+    deliverableOf("dlv_021", "asg_011", "video", {
+      status: "not_started",
+      requirements: "Natural light, show the product texture once.",
+      due_at: addDays(t, 4),
+    }),
+  );
+
+  db.campaigns.push(
+    campaignOf(
+      {
+        id: "cmp_022",
+        brandId: "brd_loopwear",
+        name: "Loopwear Thrifted Fit Check",
+        objective: "Show thrifted pieces styled for a campus day",
+        summary: "A fit-check reel styling two Loopwear pieces for class and a night out.",
+        mode: "invitation",
+      },
+      { accept_by: addHours(t, 36), go_live_from: addDays(t, 7), go_live_to: addDays(t, 11) },
+    ),
+  );
+  db.assignments.push(
+    assignmentOf("asg_012", "cmp_022", {
+      participation_status: "invited",
+      fee_amount: rupees(4500),
+      invited_at: addHours(t, -22),
+      accept_by: addHours(t, 36),
+      accepted_at: null,
+    }),
+  );
+  db.deliverables.push(
+    deliverableOf("dlv_022", "asg_012", "script", {
+      status: "not_started",
+      requirements: "Two outfit changes, campus setting.",
+      due_at: addDays(t, 4),
+    }),
+    deliverableOf("dlv_023", "asg_012", "video", {
+      status: "blocked",
+      blocked_by_deliverable_id: "dlv_022",
+      requirements: "Vertical 9:16.",
+      due_at: addDays(t, 8),
+      current_owner_kind: "system",
+      current_owner_id: null,
+    }),
+  );
+
+  db.campaigns.push(
+    campaignOf(
+      {
+        id: "cmp_023",
+        brandId: "brd_focusbrew",
+        name: "FocusBrew Late-Night Study Tea",
+        objective: "Position the tea as the calmer alternative to another coffee",
+        summary: "A wind-down reel brewing a cup during a late study session.",
+        mode: "invitation",
+      },
+      { accept_by: addHours(t, 54), go_live_from: addDays(t, 9), go_live_to: addDays(t, 13) },
+    ),
+  );
+  db.assignments.push(
+    assignmentOf("asg_013", "cmp_023", {
+      participation_status: "invited",
+      fee_amount: rupees(2600),
+      invited_at: addHours(t, -8),
+      accept_by: addHours(t, 54),
+      accepted_at: null,
+    }),
+  );
+  db.deliverables.push(
+    deliverableOf("dlv_024", "asg_013", "video", {
+      status: "not_started",
+      requirements: "Keep it under 20 seconds, warm lighting.",
+      due_at: addDays(t, 5),
+    }),
+  );
+
+  db.campaigns.push(
+    campaignOf(
+      {
+        id: "cmp_024",
+        brandId: "brd_campuscart",
+        name: "CampusCart 10-Minute Grocery Run",
+        objective: "Drive first orders among students who cook in their hostel/PG",
+        summary: "A quick reel showing a real grocery order arriving during a study break.",
+        mode: "invitation",
+      },
+      { accept_by: addHours(t, 28), go_live_from: addDays(t, 6), go_live_to: addDays(t, 10) },
+    ),
+  );
+  db.assignments.push(
+    assignmentOf("asg_014", "cmp_024", {
+      participation_status: "invited",
+      fee_amount: rupees(3200),
+      invited_at: addHours(t, -4),
+      accept_by: addHours(t, 28),
+      accepted_at: null,
+    }),
+  );
+  db.deliverables.push(
+    deliverableOf("dlv_025", "asg_014", "video", {
+      status: "not_started",
+      requirements: "Show the delivery arriving, then a quick cook or snack moment.",
+      due_at: addDays(t, 3),
+    }),
+  );
+
+  /* ── Open-application campaigns: eligible but not yet applied ───────
+   *    No assignment exists for the creator on any of these — that is the
+   *    whole point of "open application, not yet invited". The discovery
+   *    deck's /campaigns/discoverable endpoint surfaces them by matching
+   *    eligibility_rules against the seeded creator's profile (VIT Vellore,
+   *    Vellore, cat_campus/cat_tech, lang_en, instagram 24.3K followers). ─ */
+  db.campaigns.push(
+    campaignOf(
+      {
+        id: "cmp_011",
+        brandId: "brd_noise_labs",
+        name: "Noise Labs Campus Ambassador Drop",
+        objective: "Recruit ambassadors to trial the new earbuds line",
+        summary: "Post an honest first-impressions reel after a week of daily use.",
+        mode: "open_application",
+      },
+      {
+        eligibility_rules: {
+          cities: ["city_vlr", "city_blr", "city_pun"],
+          categories: ["cat_tech"],
+          platforms: ["instagram"],
+          min_followers: 5000,
+        },
+        accept_by: addDays(t, 6),
+        go_live_from: addDays(t, 12),
+        go_live_to: addDays(t, 16),
+      },
+    ),
+  );
+
+  db.campaigns.push(
+    campaignOf(
+      {
+        id: "cmp_012",
+        brandId: "brd_hostel_eats",
+        name: "Hostel Eats Midnight Menu",
+        objective: "Drive late-night order downloads among hostellers",
+        summary: "A relatable reel about ordering in during exam week.",
+        mode: "open_application",
+      },
+      {
+        eligibility_rules: {
+          colleges: ["clg_vit", "clg_manipal", "clg_christ"],
+          categories: ["cat_campus", "cat_food"],
+        },
+        accept_by: addDays(t, 5),
+        go_live_from: addDays(t, 9),
+        go_live_to: addDays(t, 13),
+      },
+    ),
+  );
+
+  db.campaigns.push(
+    campaignOf(
+      {
+        id: "cmp_013",
+        brandId: "brd_pagepilot",
+        name: "PagePilot Notes Semester Launch",
+        objective: "Build awareness of the new note-sharing app before finals",
+        summary: "Show your real study setup and how you would use shared notes.",
+        mode: "open_application",
+      },
+      {
+        eligibility_rules: {
+          categories: ["cat_campus", "cat_tech"],
+          languages: ["lang_en"],
+          min_followers: 2000,
+          max_followers: 100000,
+        },
+        accept_by: addDays(t, 7),
+        go_live_from: addDays(t, 11),
+        go_live_to: addDays(t, 15),
+      },
+    ),
+  );
+
+  db.campaigns.push(
+    campaignOf(
+      {
+        id: "cmp_014",
+        brandId: "brd_cityhop",
+        name: "CityHop Weekend Getaway",
+        objective: "Show students renting a scooter for a weekend outing",
+        summary: "A quick weekend-trip reel featuring a CityHop rental.",
+        mode: "open_application",
+      },
+      {
+        eligibility_rules: {
+          cities: ["city_vlr", "city_del", "city_mum"],
+          platforms: ["instagram", "youtube"],
+        },
+        accept_by: addDays(t, 8),
+        go_live_from: addDays(t, 13),
+        go_live_to: addDays(t, 17),
+      },
+    ),
+  );
+
+  db.campaigns.push(
+    campaignOf(
+      {
+        id: "cmp_015",
+        brandId: "brd_brewbox",
+        name: "BrewBox Study-Fuel Cold Coffee",
+        objective: "Reach students who need a caffeine hit between back-to-back classes",
+        summary: "A quick campus-life reel pairing the cold coffee with a study grind moment.",
+        mode: "open_application",
+      },
+      {
+        eligibility_rules: {
+          categories: ["cat_campus"],
+          languages: ["lang_en"],
+          min_followers: 2000,
+        },
+        accept_by: addDays(t, 9),
+        go_live_from: addDays(t, 14),
+        go_live_to: addDays(t, 18),
+      },
+    ),
+  );
+
+  db.campaigns.push(
+    campaignOf(
+      {
+        id: "cmp_016",
+        brandId: "brd_thriftly",
+        name: "Thriftly Hostel Cleanout",
+        objective: "Drive listings ahead of semester-end move-out",
+        summary: "Show how you would resell a few things before heading home for break.",
+        mode: "open_application",
+      },
+      {
+        eligibility_rules: {
+          colleges: ["clg_vit", "clg_manipal", "clg_christ", "clg_srcc"],
+          categories: ["cat_campus"],
+        },
+        accept_by: addDays(t, 6),
+        go_live_from: addDays(t, 10),
+        go_live_to: addDays(t, 14),
+      },
+    ),
+  );
+
+  db.campaigns.push(
+    campaignOf(
+      {
+        id: "cmp_017",
+        brandId: "brd_pulsefit",
+        name: "PulseFit Campus Step Challenge",
+        objective: "Get the fitness band onto wrists ahead of a campus step challenge",
+        summary: "A day-in-the-life reel wearing the band between classes and the gym.",
+        mode: "open_application",
+      },
+      {
+        eligibility_rules: {
+          categories: ["cat_tech", "cat_fitness"],
+          platforms: ["instagram"],
+          min_followers: 3000,
+        },
+        accept_by: addDays(t, 10),
+        go_live_from: addDays(t, 15),
+        go_live_to: addDays(t, 19),
+      },
+    ),
+  );
+
+  db.campaigns.push(
+    campaignOf(
+      {
+        id: "cmp_018",
+        brandId: "brd_notenest",
+        name: "NoteNest Finals Stationery Kit",
+        objective: "Move the finals-season stationery kit through campus word of mouth",
+        summary: "An unboxing-style reel of the kit set up on your actual desk.",
+        mode: "open_application",
+      },
+      {
+        eligibility_rules: {
+          categories: ["cat_campus"],
+          languages: ["lang_en", "lang_hi"],
+          max_followers: 50000,
+        },
+        accept_by: addDays(t, 5),
+        go_live_from: addDays(t, 8),
+        go_live_to: addDays(t, 12),
+      },
+    ),
+  );
+
+  db.campaigns.push(
+    campaignOf(
+      {
+        id: "cmp_019",
+        brandId: "brd_quickcab",
+        name: "QuickCab Late-Night Safety Ride",
+        objective: "Build trust in the late-night campus ride service",
+        summary: "A short, genuine reel about getting home safely after a late library session.",
+        mode: "open_application",
+      },
+      {
+        eligibility_rules: {
+          cities: ["city_vlr", "city_blr", "city_del", "city_mum", "city_pun"],
+        },
+        accept_by: addDays(t, 7),
+        go_live_from: addDays(t, 11),
+        go_live_to: addDays(t, 15),
+      },
+    ),
+  );
+
+  db.campaigns.push(
+    campaignOf(
+      {
+        id: "cmp_020",
+        brandId: "brd_snackbox",
+        name: "SnackBox Monthly Hostel Box",
+        objective: "Grow subscriptions among hostel residents",
+        summary: "An honest taste-test reel unboxing this month's snack selection.",
+        mode: "open_application",
+      },
+      {
+        eligibility_rules: {
+          categories: ["cat_campus", "cat_food"],
+          min_followers: 1500,
+        },
+        accept_by: addDays(t, 8),
+        go_live_from: addDays(t, 12),
+        go_live_to: addDays(t, 16),
+      },
+    ),
+  );
+
+  db.campaignReviewers.push(
+    { campaign_id: "cmp_011", user_id: REVIEWER_PM_ID, sequence: 1, can_reassign: true },
+    { campaign_id: "cmp_012", user_id: REVIEWER_PM_ID, sequence: 1, can_reassign: true },
+    { campaign_id: "cmp_013", user_id: REVIEWER_PM_ID, sequence: 1, can_reassign: true },
+    { campaign_id: "cmp_014", user_id: REVIEWER_PM_ID, sequence: 1, can_reassign: true },
+    { campaign_id: "cmp_015", user_id: REVIEWER_PM_ID, sequence: 1, can_reassign: true },
+    { campaign_id: "cmp_016", user_id: REVIEWER_PM_ID, sequence: 1, can_reassign: true },
+    { campaign_id: "cmp_017", user_id: REVIEWER_PM_ID, sequence: 1, can_reassign: true },
+    { campaign_id: "cmp_018", user_id: REVIEWER_PM_ID, sequence: 1, can_reassign: true },
+    { campaign_id: "cmp_019", user_id: REVIEWER_PM_ID, sequence: 1, can_reassign: true },
+    { campaign_id: "cmp_020", user_id: REVIEWER_PM_ID, sequence: 1, can_reassign: true },
   );
 
   /* ── Campaign 4: published, awaiting metrics ──────────────────────── */
@@ -830,10 +1423,19 @@ export function seedDatabase(): Database {
       id: "spk_001",
       name: "Meera Krishnan",
       title: "Head of Creator Partnerships, Puzzle Media",
-      photo: null,
+      photo: placeholderImage("spk_001_meera"),
       bio: "Ten years building creator programmes across India. Previously at a national broadcaster.",
       expertise: ["Brand partnerships", "Negotiation", "Content strategy"],
       social_links: ["https://linkedin.com/in/example"],
+    },
+    {
+      id: "spk_002",
+      name: "Rohan Iyer",
+      title: "Legal Counsel, Puzzle Media",
+      photo: placeholderImage("spk_002_rohan"),
+      bio: "Advises brands and creators on advertising disclosure and platform policy.",
+      expertise: ["Disclosure rules", "Platform policy", "Contracts"],
+      social_links: ["https://linkedin.com/in/example-rohan"],
     },
   ];
   db.events = [
@@ -853,6 +1455,7 @@ export function seedDatabase(): Database {
       rsvp_deadline: addDays(t, 3),
       speaker_id: "spk_001",
       resources: [],
+      image: placeholderImage("evt_001_hooks"),
     },
     {
       id: "evt_002",
@@ -868,8 +1471,27 @@ export function seedDatabase(): Database {
       capacity: 100,
       eligibility_rules: {},
       rsvp_deadline: addDays(t, 10),
-      speaker_id: "spk_001",
+      speaker_id: "spk_002",
       resources: [],
+      image: placeholderImage("evt_002_disclosure"),
+    },
+    {
+      id: "evt_003",
+      type: "meetup",
+      title: "Campus creator meetup: Bengaluru",
+      description:
+        "An in-person evening for creators in and around Bengaluru — swap notes, meet the Puzzle Media team.",
+      format: "in_person",
+      starts_at: addDays(t, 18),
+      ends_at: addHours(addDays(t, 18), 2),
+      venue: "Puzzle Media office, Indiranagar",
+      link: null,
+      capacity: 30,
+      eligibility_rules: { cities: ["city_blr"] },
+      rsvp_deadline: addDays(t, 16),
+      speaker_id: null,
+      resources: [],
+      image: placeholderImage("evt_003_meetup"),
     },
   ];
   db.rsvps = [

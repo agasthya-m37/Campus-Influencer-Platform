@@ -173,6 +173,22 @@
   --shadow-md: var(--shadow-hard);
   --shadow-lg: var(--shadow-hard-lg);
 
+  /* Fixed to ink in every theme, never re-declared under .dark. Two uses:
+     (1) cards whose fill is a Layer 1 light primitive (lime-200, paper-200,
+     orange-100) that never darkens for dark mode — --shadow-hard itself
+     flips to lime in dark mode so the shadow stays visible against a page
+     that DOES go dark, but a card whose own fill stays light has nothing to
+     gain from that swap, and lime-shadow-on-lime-fill on a dark page reads
+     as two nested boxes instead of one card (see .card-hard-on-light); (2)
+     small interactive pill shapes (buttons) and plain surface cards, where
+     the same lime-on-dark swap reads as a doubled outline rather than a
+     shadow once the shape is small/isolated enough — button.tsx, card.tsx
+     and states.tsx point their shadow at this token instead of the
+     theme-reactive shadow-sm/md/lg utilities for exactly that reason. */
+  --shadow-hard-on-light: 3px 3px 0 0 var(--pm-ink-900);
+  --shadow-hard-lg-on-light: 5px 5px 0 0 var(--pm-ink-900);
+  --shadow-hard-sm-on-light: 2px 2px 0 0 var(--pm-ink-900);
+
   /* Ours — motion */
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --dur-fast: 120ms;
@@ -465,6 +481,21 @@
     box-shadow: var(--shadow-hard-lg);
   }
 
+  /* Same signature card, but for a surface whose own fill is always a light
+     Layer 1 primitive (lime-200, paper-200, orange-100) — the shadow stays
+     ink in every theme instead of flipping to lime, which would otherwise
+     read as two nested boxes against a dark page. Pair with .on-light-fill
+     for the matching text-color fix. */
+  .card-hard-on-light {
+    border: 1.5px solid var(--pm-ink-900);
+    box-shadow: var(--shadow-hard-on-light);
+  }
+
+  .card-hard-lg-on-light {
+    border: 1.5px solid var(--pm-ink-900);
+    box-shadow: var(--shadow-hard-lg-on-light);
+  }
+
   /* Press feedback that matches the sticker metaphor: the card slides into
      its own shadow rather than scaling, so nothing reflows. */
   .press-hard {
@@ -473,9 +504,15 @@
       box-shadow var(--dur-fast) var(--ease-out);
   }
 
+  /* Ink-only, not the theme-reactive --shadow-hard-sm: on a small, isolated
+     pressable shape the lime dark-mode swap reads as a doubled outline
+     rather than a shadow (the same reasoning as button.tsx's shadow). Every
+     current user of .press-hard is either a button or a light-fill card, so
+     this is simply always correct rather than needing an .on-light-fill
+     qualifier. */
   .press-hard:active {
     transform: translate(2px, 2px);
-    box-shadow: var(--shadow-hard-sm);
+    box-shadow: var(--shadow-hard-sm-on-light);
   }
 
   /* Display type with the artwork's offset ghost behind it. */
@@ -494,6 +531,36 @@
   /* Opt a section out of the page grid, for solid brand panels. */
   .no-grid {
     background-image: none;
+  }
+
+  /* Hides the native scrollbar on an internally-scrolling surface (a bottom
+     sheet, a horizontal card row) without disabling scroll — the browser's
+     own scrollbar chrome doesn't match this app's drawn, sticker-style
+     surfaces, and these regions already communicate scrollability another
+     way (a peeking next card, a drag handle, visible content cut off). */
+  .scrollbar-hide {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* old Edge/IE */
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Chrome, Safari */
+  }
+
+  /* For any surface hardcoded to a light brand fill (lime-200, paper-200,
+     orange-100, …) that is intentionally NOT remapped for dark mode — see
+     the Layer 1 primitives above. Without this, child text inherits the
+     theme's --foreground/--muted-foreground, which flip to near-white in
+     dark mode and become illegible against a fill that never darkens.
+     Apply to the fill container so every descendant reads correctly
+     regardless of site theme, instead of hardcoding ink colors at each
+     call site (which is exactly how this went wrong more than once). */
+  .on-light-fill {
+    color: var(--pm-ink-900);
+  }
+
+  .on-light-fill :where(.text-muted-foreground) {
+    color: var(--pm-ink-500);
   }
 }
 

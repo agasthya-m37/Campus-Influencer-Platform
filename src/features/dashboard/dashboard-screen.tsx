@@ -1,315 +1,707 @@
 "use client";
 
-import {
-  ArrowRight,
-  CalendarDays,
-  CheckCircle2,
-  Megaphone,
-  TrendingUp,
-  Wallet,
-} from "lucide-react";
+import { ArrowRight, Check, FileText, Sparkles, Video, X } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
 
-import { ActionRequiredCard } from "@/components/domain/action-required-card";
-import { TaskCard } from "@/components/domain/task-card";
 import { CardSkeleton, EmptyState, ErrorState } from "@/components/patterns/states";
-import { SectionHeader } from "@/components/patterns/section";
+import { PageHeader } from "@/components/patterns/section";
 import { StatusPill } from "@/components/patterns/status-pill";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { api } from "@/lib/api/client";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Textarea } from "@/components/ui/textarea";
+import { api, type CampaignListItem, type DiscoverableCampaign } from "@/lib/api/client";
 import { messageFor } from "@/lib/api/errors";
-import { useQuery } from "@/lib/api/hooks";
+import { useMutation, useQuery } from "@/lib/api/hooks";
+import { DELIVERABLE_TYPE_LABEL } from "@/lib/domain/deliverables";
+import { PARTICIPATION_HELP } from "@/lib/domain/participation";
 import { participationStatus } from "@/lib/domain/status";
-import { openTasks, sortByUrgency, topActionRequired } from "@/lib/domain/tasks";
+import { openTasks } from "@/lib/domain/tasks";
 import { formatMoney } from "@/lib/format/currency";
-import { EARNINGS } from "@/lib/format/copy";
-import { formatDate } from "@/lib/format/datetime";
-import { isWorking } from "@/lib/domain/participation";
-import { toActionRequiredView, toTaskCardView } from "@/features/dashboard/mappers";
+import { formatDateTime } from "@/lib/format/datetime";
+import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
+
+import { DeckCard, type DeckItem, type SwipeDirection } from "@/features/dashboard/deck-card";
 
 /**
- * F-DASH-03: action required, my campaigns, my submissions, my earnings,
- * my impact, events and learning, announcements, profile completeness —
- * in that priority order, with the action card above the fold at 360×640.
+ * F-DASH-03 (rewritten): the home screen IS the discovery deck. It shows
+ * both campaigns the creator is already invited to and open-application
+ * campaigns they are eligible for but have not yet applied to — Hinge/Tinder
+ * style, one card at a time. Everything the previous "task inbox" version
+ * showed (level/streak, action-required list, go-to tiles) now lives on its
+ * own screen (Profile keeps the level/streak hero; /tasks keeps the full
+ * queue); a compact banner here is the only trace of it, so nothing pending
+ * gets lost, but the deck is the whole point of this screen.
  */
 export function DashboardScreen() {
+  const invitesQuery = useQuery((signal) => api.campaigns.list({ signal }), []);
+  const openQuery = useQuery((signal) => api.campaigns.discoverable({ signal }), []);
   const tasksQuery = useQuery((signal) => api.tasks.list({ signal }), []);
-  const campaignsQuery = useQuery((signal) => api.campaigns.list({ signal }), []);
-  const earningsQuery = useQuery((signal) => api.earnings.list({ signal }), []);
-  const eventsQuery = useQuery((signal) => api.events.list({ signal }), []);
-  const meQuery = useQuery((signal) => api.me.get({ signal }), []);
+  const prefersReducedMotion = usePrefersReducedMotion();
 
-  if (tasksQuery.error) {
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  const [detailsFor, setDetailsFor] = useState<DeckItem | null>(null);
+  const [declineTarget, setDeclineTarget] = useState<CampaignListItem | null>(null);
+  const [reason, setReason] = useState("");
+
+  const accept = useMutation(
+    (assignmentId: string, key: string) =>
+      api.assignments.accept(assignmentId, { idempotencyKey: key }),
+    {
+      onSuccess: () => toast.success("You are on the campaign. Your first task is ready."),
+      onError: (e) => toast.error(messageFor(e)),
+    },
+  );
+
+  const decline = useMutation(
+    (input: { assignmentId: string; reason: string }, key: string) =>
+      api.assignments.decline(input.assignmentId, input.reason, { idempotencyKey: key }),
+    {
+      onSuccess: () => {
+        toast.success("Declined. Puzzle Media has been told.");
+      },
+      onError: (e) => toast.error(messageFor(e)),
+    },
+  );
+
+  const apply = useMutation(
+    (campaignId: string, key: string) => api.campaigns.apply(campaignId, { idempotencyKey: key }),
+    {
+      onSuccess: () => toast.success("Applied. Puzzle Media will let you know."),
+      onError: (e) => toast.error(messageFor(e)),
+    },
+  );
+
+  const deck: DeckItem[] = useMemo(() => {
+    const invites: DeckItem[] = (invitesQuery.data?.items ?? [])
+      .filter((row) => row.assignment.participation_status === "invited")
+      .map((row) => ({ kind: "invite" as const, key: row.assignment.id, row }));
+
+    const open: DeckItem[] = (openQuery.data?.items ?? []).map((item) => ({
+      kind: "open" as const,
+      key: item.campaign.id,
+      item,
+    }));
+
+    // Invitations first — they carry a response deadline, so they are the
+    // more time-sensitive of the two. Open-application campaigns follow.
+    return [...invites, ...open].filter((d) => !dismissed.has(d.key));
+  }, [invitesQuery.data, openQuery.data, dismissed]);
+
+  const top = deck[0] ?? null;
+
+  const isLoading = invitesQuery.isLoading || openQuery.isLoading;
+  const error = invitesQuery.error ?? openQuery.error;
+
+  const pendingCount = openTasks(tasksQuery.data ?? []).length;
+
+  if (error) {
     return (
       <ErrorState
-        message={messageFor(tasksQuery.error)}
-        isOffline={tasksQuery.error.kind === "network"}
-        onRetry={tasksQuery.refetch}
+        message={messageFor(error)}
+        isOffline={error.kind === "network"}
+        onRetry={() => {
+          invitesQuery.refetch();
+          openQuery.refetch();
+        }}
       />
     );
   }
 
-  const isLoading = tasksQuery.isLoading || campaignsQuery.isLoading;
-  const tasks = tasksQuery.data ?? [];
-  const campaigns = campaignsQuery.data?.items ?? [];
-  const campaignById = new Map(campaigns.map((c) => [c.campaign.id, c.campaign]));
+  function dismiss(key: string) {
+    setDismissed((prev) => new Set(prev).add(key));
+  }
 
-  // F-DASH-01 + F-TASK-01: the card reads the top of the same queue /tasks
-  // renders. Not a parallel calculation.
-  const top = topActionRequired(tasks);
-  const rest = sortByUrgency(openTasks(tasks)).slice(1, 4);
+  async function handleAccept(row: CampaignListItem) {
+    const result = await accept.mutate(row.assignment.id);
+    if (result) dismiss(row.assignment.id);
+  }
 
-  const activeCampaigns = campaigns.filter((c) =>
-    isWorking(c.assignment.participation_status),
-  );
-  const invitations = campaigns.filter(
-    (c) => c.assignment.participation_status === "invited",
-  );
+  async function handleApply(item: DiscoverableCampaign) {
+    const result = await apply.mutate(item.campaign.id);
+    if (result) dismiss(item.campaign.id);
+  }
 
-  const earningRows = earningsQuery.data?.items ?? [];
-  const totals = earningRows.reduce(
-    (acc, row) => {
-      const amount = row.earning?.amount ?? row.assignment.fee_amount ?? 0;
-      if (row.earning?.status === "paid") acc.paid += amount;
-      else if (row.earning?.status === "payment_pending") acc.pending += amount;
-      acc.total += amount;
-      return acc;
-    },
-    { total: 0, pending: 0, paid: 0 },
-  );
+  function openDeclinePrompt(row: CampaignListItem) {
+    setReason("");
+    setDeclineTarget(row);
+  }
 
-  const upcoming = (eventsQuery.data?.items ?? [])
-    .filter((e) => new Date(e.event.starts_at) > new Date())
-    .slice(0, 1);
+  async function confirmDecline() {
+    if (!declineTarget) return;
+    const result = await decline.mutate({
+      assignmentId: declineTarget.assignment.id,
+      reason,
+    });
+    if (result) {
+      dismiss(declineTarget.assignment.id);
+      setDeclineTarget(null);
+    }
+  }
 
-  const profile = meQuery.data?.profile;
-  const firstName = profile?.display_name.split(" ")[0] ?? "there";
+  function handleSwipe(deckItem: DeckItem, direction: SwipeDirection) {
+    if (deckItem.kind === "invite") {
+      if (direction === "right") {
+        void handleAccept(deckItem.row);
+      } else {
+        openDeclinePrompt(deckItem.row);
+      }
+      return;
+    }
+
+    // Open-application campaigns have no existing assignment, so a left
+    // swipe has nowhere sensible to record "not interested" — there is no
+    // reason dialog and no mutation, just a local dismiss from the deck.
+    if (direction === "right") {
+      void handleApply(deckItem.item);
+    } else {
+      dismiss(deckItem.key);
+    }
+  }
+
+  const isBusy = accept.isPending || decline.isPending || apply.isPending;
 
   return (
-    <div className="space-y-8">
-      <div>
-        <p className="text-sm text-muted-foreground">Hello, {firstName}</p>
-        <h1 className="mt-0.5 font-display text-display leading-none">
-          {top ? "One thing needs you" : "You are all caught up"}
-        </h1>
-      </div>
+    <div className="space-y-6">
+      <PageHeader title="Home" description="New campaigns, one at a time." />
 
-      {/* 1 — Action required */}
+      {/* Compact pending-tasks banner — replaces the old full "Action
+          required" + "Also open" sections. Everything else that was on the
+          previous home screen (level/streak hero, campaigns, earnings,
+          impact, events, profile) lives on its own screen; the level/streak
+          hero specifically now shows only on Profile, so it is not
+          duplicated here. */}
+      {pendingCount > 0 && (
+        <Link
+          href="/tasks"
+          className="card-hard-on-light press-hard on-light-fill flex items-center justify-between gap-3 rounded-[var(--radius-lg)] bg-[var(--pm-lime-200)] px-4 py-3 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
+          <span className="min-w-0 font-display text-sm leading-tight">
+            You have {pendingCount} thing{pendingCount === 1 ? "" : "s"} needing you
+          </span>
+          <ArrowRight className="size-4 shrink-0" aria-hidden />
+        </Link>
+      )}
+
       {isLoading ? (
-        <CardSkeleton rows={1} />
-      ) : top ? (
-        <ActionRequiredCard
-          view={toActionRequiredView(top, campaignById.get(top.campaign_id ?? ""))}
+        <CardSkeleton rows={3} />
+      ) : deck.length === 0 ? (
+        <EmptyState
+          icon={<Sparkles className="size-6" />}
+          title="Nothing new right now"
+          description="Puzzle Media adds campaigns here the moment one matches your profile."
+          action={
+            <Button asChild variant="outline" size="sm">
+              <Link href="/campaigns">See my campaigns</Link>
+            </Button>
+          }
         />
       ) : (
-        <EmptyState
-          icon={<CheckCircle2 className="size-6" />}
-          title="Nothing is waiting on you"
-          description="When a reviewer responds or a new campaign arrives, it shows up here first."
-        />
-      )}
-
-      {/* Remaining open tasks — keeps every pending item within two taps */}
-      {rest.length > 0 && (
-        <section className="space-y-3">
-          <SectionHeader
-            title="Also open"
-            action={
-              <Button asChild variant="ghost" size="sm">
-                <Link href="/tasks">
-                  All tasks
-                  <ArrowRight className="size-4" aria-hidden />
-                </Link>
-              </Button>
-            }
-          />
-          <div className="space-y-2">
-            {rest.map((task) => (
-              <TaskCard
-                key={task.id}
-                view={toTaskCardView(task, campaignById.get(task.campaign_id ?? ""))}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* 2 — My campaigns */}
-      <section className="space-y-3">
-        <SectionHeader
-          title="My campaigns"
-          description={
-            invitations.length > 0
-              ? `${invitations.length} invitation${invitations.length > 1 ? "s" : ""} waiting`
-              : undefined
-          }
-          action={
-            <Button asChild variant="ghost" size="sm">
-              <Link href="/campaigns">
-                See all
-                <ArrowRight className="size-4" aria-hidden />
-              </Link>
-            </Button>
-          }
-        />
-        {campaignsQuery.isLoading ? (
-          <CardSkeleton rows={2} />
-        ) : activeCampaigns.length + invitations.length === 0 ? (
-          <EmptyState
-            icon={<Megaphone className="size-6" />}
-            title="No campaigns yet"
-            description="Puzzle Media invites you when a brand matches your profile."
-          />
-        ) : (
-          <div className="space-y-2">
-            {[...invitations, ...activeCampaigns].slice(0, 3).map((row) => (
-              <Link
-                key={row.assignment.id}
-                href={`/campaigns/${row.campaign.id}`}
-                className="flex items-center gap-3 rounded-lg border bg-card p-4 transition-colors hover:border-primary/40"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium">{row.campaign.name}</p>
-                  <p className="mt-0.5 text-sm text-muted-foreground">{row.brand.name}</p>
-                </div>
-                <StatusPill
-                  size="sm"
-                  status={participationStatus(row.assignment.participation_status)}
+        <>
+          <div className="relative mx-auto h-[440px] w-full max-w-sm">
+            {deck
+              .slice(0, 3)
+              .map((deckItem, i) => (
+                <DeckCard
+                  key={deckItem.key}
+                  item={deckItem}
+                  isTop={i === 0}
+                  stackIndex={i}
+                  disabled={isBusy}
+                  prefersReducedMotion={prefersReducedMotion}
+                  onSwipe={(direction) => handleSwipe(deckItem, direction)}
+                  onTap={() => setDetailsFor(deckItem)}
                 />
-              </Link>
-            ))}
+              ))
+              .reverse()}
           </div>
-        )}
-      </section>
 
-      {/* 3 — My earnings. Exact strings from copy.ts; no money moves here. */}
-      <section className="space-y-3">
-        <SectionHeader
-          title="My earnings"
-          action={
-            <Button asChild variant="ghost" size="sm">
-              <Link href="/earnings">
-                Details
-                <ArrowRight className="size-4" aria-hidden />
-              </Link>
-            </Button>
-          }
-        />
-        <div className="grid grid-cols-3 gap-2">
-          {[
-            { label: EARNINGS.TOTAL, value: totals.total },
-            { label: EARNINGS.PENDING, value: totals.pending },
-            { label: EARNINGS.PAID, value: totals.paid },
-          ].map((tile) => (
-            <div key={tile.label} className="rounded-lg border bg-card p-3">
-              <p className="text-caption leading-tight text-muted-foreground">
-                {tile.label}
-              </p>
-              <p className="mt-1.5 font-display text-h2 tabular">
-                {formatMoney(tile.value)}
-              </p>
+          {/* Fallback controls: the primary accessible path. Identical
+              behavior via mouse, keyboard and screen reader; the drag
+              gesture above is a bonus, not a requirement. */}
+          {top && (
+            <div className="mx-auto flex w-full max-w-sm gap-3">
+              <Button
+                size="lg"
+                className="flex-1 bg-[var(--pm-red-700)] text-white hover:bg-[var(--pm-red-700)]/90"
+                disabled={isBusy}
+                onClick={() =>
+                  top.kind === "invite" ? openDeclinePrompt(top.row) : dismiss(top.key)
+                }
+              >
+                <X className="size-4" aria-hidden />
+                {top.kind === "invite" ? "Decline" : "Pass"}
+              </Button>
+              <Button
+                size="lg"
+                className="flex-1 bg-[var(--pm-lime-500)] text-[var(--pm-ink-900)] hover:bg-[var(--pm-lime-400)]"
+                disabled={isBusy}
+                onClick={() =>
+                  top.kind === "invite" ? handleAccept(top.row) : handleApply(top.item)
+                }
+              >
+                <Check className="size-4" aria-hidden />
+                {top.kind === "invite"
+                  ? accept.isPending
+                    ? "Accepting…"
+                    : "Accept"
+                  : apply.isPending
+                    ? "Applying…"
+                    : "Apply"}
+              </Button>
             </div>
-          ))}
-        </div>
-      </section>
+          )}
 
-      {/* 4 — My impact */}
-      <section className="space-y-3">
-        <SectionHeader title="My impact" />
-        <Link
-          href="/performance"
-          className="flex items-center gap-3 rounded-lg border bg-card p-4 transition-colors hover:border-primary/40"
-        >
-          <TrendingUp className="size-5 shrink-0 text-primary" aria-hidden />
-          <div className="min-w-0 flex-1">
-            <p className="font-medium">See how your posts performed</p>
-            <p className="mt-0.5 text-sm text-muted-foreground">
-              Results settle seven days after you post.
-            </p>
-          </div>
-          <ArrowRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-        </Link>
-      </section>
-
-      {/* 5 — Events and learning */}
-      <section className="space-y-3">
-        <SectionHeader
-          title="Events & learning"
-          action={
-            <Button asChild variant="ghost" size="sm">
-              <Link href="/learn">
-                All events
-                <ArrowRight className="size-4" aria-hidden />
-              </Link>
-            </Button>
-          }
-        />
-        {upcoming.length === 0 ? (
-          <EmptyState
-            icon={<CalendarDays className="size-6" />}
-            title="No upcoming sessions"
-            description="Workshops appear here when Puzzle Media schedules them."
-          />
-        ) : (
-          upcoming.map(({ event, rsvp }) => (
-            <Link
-              key={event.id}
-              href="/learn"
-              className="flex items-start gap-3 rounded-lg border bg-card p-4 transition-colors hover:border-primary/40"
+          {/* Keyboard/screen-reader path to the same details the card's
+              tap gesture opens — the card itself isn't a focusable control. */}
+          {top && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mx-auto flex"
+              onClick={() => setDetailsFor(top)}
             >
-              <CalendarDays className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden />
-              <div className="min-w-0 flex-1">
-                <p className="font-medium leading-snug">{event.title}</p>
-                <p className="mt-0.5 text-sm text-muted-foreground">
-                  {formatDate(event.starts_at)}
-                  {rsvp?.state === "going" && " · You are going"}
-                </p>
-              </div>
-            </Link>
-          ))
-        )}
-      </section>
+              View full details
+            </Button>
+          )}
 
-      {/* 6 — Profile completeness */}
-      {profile && profile.completeness_score < 100 && (
-        <section className="space-y-3">
-          <SectionHeader title="Profile completeness" />
-          <Link
-            href="/profile"
-            className="block rounded-lg border bg-card p-4 transition-colors hover:border-primary/40"
-          >
-            <div className="flex items-center justify-between gap-3">
-              <p className="font-medium">Your profile is {profile.completeness_score}% complete</p>
-              <span className="font-mono text-sm tabular text-muted-foreground">
-                {profile.completeness_score}%
-              </span>
-            </div>
-            <Progress value={profile.completeness_score} className="mt-3 h-2" />
-            <p className="mt-2 text-sm text-muted-foreground">
-              A fuller profile means better campaign matches.
-            </p>
-          </Link>
-        </section>
+          <p className="text-center text-caption text-muted-foreground">
+            {deck.length} campaign{deck.length > 1 ? "s" : ""} waiting
+          </p>
+        </>
       )}
 
-      <section className="space-y-3">
-        <SectionHeader title="Quick links" />
-        <div className="grid grid-cols-2 gap-2">
-          <Button asChild variant="outline" className="h-auto justify-start py-3">
-            <Link href="/earnings">
-              <Wallet className="size-4" aria-hidden />
-              Earnings
-            </Link>
-          </Button>
-          <Button asChild variant="outline" className="h-auto justify-start py-3">
-            <Link href="/notifications">
-              <Megaphone className="size-4" aria-hidden />
-              Updates
-            </Link>
-          </Button>
-        </div>
-      </section>
+      <DetailsSheet
+        item={detailsFor}
+        onOpenChange={(open) => !open && setDetailsFor(null)}
+        isBusy={isBusy}
+        acceptPending={accept.isPending}
+        applyPending={apply.isPending}
+        onAccept={(row) => {
+          setDetailsFor(null);
+          void handleAccept(row);
+        }}
+        onReject={(row) => {
+          setDetailsFor(null);
+          openDeclinePrompt(row);
+        }}
+        onApply={(item) => {
+          setDetailsFor(null);
+          void handleApply(item);
+        }}
+        onPass={(key) => {
+          setDetailsFor(null);
+          dismiss(key);
+        }}
+      />
+
+      <DeclineDialog
+        open={declineTarget !== null}
+        onOpenChange={(open) => !open && setDeclineTarget(null)}
+        reason={reason}
+        onReasonChange={setReason}
+        isPending={decline.isPending}
+        onConfirm={confirmDecline}
+      />
     </div>
+  );
+}
+
+function DetailsSheet({
+  item,
+  onOpenChange,
+  isBusy,
+  acceptPending,
+  applyPending,
+  onAccept,
+  onReject,
+  onApply,
+  onPass,
+}: {
+  item: DeckItem | null;
+  onOpenChange: (open: boolean) => void;
+  isBusy: boolean;
+  acceptPending: boolean;
+  applyPending: boolean;
+  onAccept: (row: CampaignListItem) => void;
+  onReject: (row: CampaignListItem) => void;
+  onApply: (item: DiscoverableCampaign) => void;
+  onPass: (key: string) => void;
+}) {
+  return (
+    <Sheet open={item !== null} onOpenChange={onOpenChange}>
+      {/* The sheet carries its own photo and its own Accept/Reject — it is
+          the card's full-detail state, not a separate panel floating over
+          it, so it never needs the card underneath to make sense on its
+          own, and every action available on the card is available here. */}
+      <SheetContent
+        side="bottom"
+        className="max-h-[90vh] gap-0 overflow-y-auto p-0 scrollbar-hide"
+      >
+        {item?.kind === "invite" && (
+          <InviteDetails
+            row={item.row}
+            isBusy={isBusy}
+            acceptPending={acceptPending}
+            onAccept={() => onAccept(item.row)}
+            onReject={() => onReject(item.row)}
+          />
+        )}
+        {item?.kind === "open" && (
+          <OpenDetails
+            item={item.item}
+            isBusy={isBusy}
+            applyPending={applyPending}
+            onApply={() => onApply(item.item)}
+            onPass={() => onPass(item.key)}
+          />
+        )}
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+/** Full-width photo banner at the top of the sheet, with the title overlaid
+ *  the same way the card presents it — the sheet reads as the card's
+ *  expanded state, not a different piece of UI. */
+function DetailsBanner({
+  image,
+  brandName,
+  title,
+  statusSlot,
+}: {
+  image: string | null;
+  brandName: string;
+  title: string;
+  statusSlot: React.ReactNode;
+}) {
+  return (
+    <div className="relative">
+      <SheetHeader className="sr-only">
+        <SheetTitle>{title}</SheetTitle>
+        <SheetDescription>{brandName}</SheetDescription>
+      </SheetHeader>
+
+      {image ? (
+        <div className="relative aspect-[4/3] w-full bg-muted">
+          <Image src={image} alt="" aria-hidden fill unoptimized className="object-cover" />
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(to top, var(--pm-ink-900) 0%, rgba(0,0,0,0.55) 32%, rgba(0,0,0,0) 62%)",
+            }}
+          />
+          <div className="absolute inset-x-0 bottom-0 p-5 text-[var(--pm-paper-50)]">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm text-[var(--pm-paper-200)]">{brandName}</p>
+                <p className="mt-0.5 font-display text-h1 leading-tight text-balance">{title}</p>
+              </div>
+              {statusSlot}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-1 bg-[var(--pm-paper-200)] p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm text-muted-foreground">{brandName}</p>
+              <p className="mt-0.5 font-display text-h1 leading-tight text-balance">{title}</p>
+            </div>
+            {statusSlot}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Pinned to the bottom of the sheet, so accepting/rejecting never requires
+ *  closing the expanded view first — every action on the card is available
+ *  here too. */
+function DetailsActionBar({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="sticky bottom-0 flex gap-3 border-t bg-card p-4">{children}</div>
+  );
+}
+
+function InviteDetails({
+  row,
+  isBusy,
+  acceptPending,
+  onAccept,
+  onReject,
+}: {
+  row: CampaignListItem;
+  isBusy: boolean;
+  acceptPending: boolean;
+  onAccept: () => void;
+  onReject: () => void;
+}) {
+  return (
+    <>
+      <DetailsBanner
+        image={row.campaign.image}
+        brandName={row.brand.name}
+        title={row.campaign.name}
+        statusSlot={
+          <StatusPill size="sm" status={participationStatus(row.assignment.participation_status)} />
+        }
+      />
+
+      <div className="space-y-5 p-5">
+        {PARTICIPATION_HELP[row.assignment.participation_status] && (
+          <p className="text-sm text-muted-foreground">
+            {PARTICIPATION_HELP[row.assignment.participation_status]}
+          </p>
+        )}
+
+        <section className="rounded-lg border bg-card p-4">
+          <dl className="grid grid-cols-2 gap-4">
+            {row.assignment.visible_to_creator && row.assignment.fee_amount !== null && (
+              <div>
+                <dt className="text-caption text-muted-foreground">You will be paid</dt>
+                <dd className="mt-0.5 font-display text-h2 tabular">
+                  {formatMoney(row.assignment.fee_amount)}
+                </dd>
+              </div>
+            )}
+            {row.assignment.accept_by && (
+              <div>
+                <dt className="text-caption text-muted-foreground">Respond by</dt>
+                <dd className="mt-0.5 text-sm font-medium">
+                  {formatDateTime(row.assignment.accept_by)}
+                </dd>
+              </div>
+            )}
+            {row.campaign.go_live_from && (
+              <div>
+                <dt className="text-caption text-muted-foreground">Go live window</dt>
+                <dd className="mt-0.5 text-sm font-medium">
+                  {formatDateTime(row.campaign.go_live_from)}
+                </dd>
+              </div>
+            )}
+          </dl>
+        </section>
+
+        <section className="space-y-2">
+          <h3 className="text-caption font-semibold tracking-wide text-muted-foreground uppercase">
+            About this campaign
+          </h3>
+          <p className="text-sm">{row.campaign.objective}</p>
+          <p className="text-sm text-muted-foreground">{row.campaign.description}</p>
+        </section>
+
+        <section className="space-y-2">
+          <h3 className="text-caption font-semibold tracking-wide text-muted-foreground uppercase">
+            What you will make
+          </h3>
+          <ul className="space-y-2">
+            {row.deliverables.map((d) => (
+              <li key={d.id} className="flex items-center gap-3 rounded-lg border bg-card p-3">
+                {d.type === "video" ? (
+                  <Video className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                ) : (
+                  <FileText className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium">{DELIVERABLE_TYPE_LABEL[d.type]}</p>
+                  <p className="mt-0.5 text-caption text-muted-foreground">
+                    Due {formatDateTime(d.due_at)}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <Button asChild variant="outline" className="w-full">
+          <Link href={`/campaigns/${row.campaign.id}`}>Open full campaign page</Link>
+        </Button>
+      </div>
+
+      <DetailsActionBar>
+        <Button
+          size="lg"
+          className="flex-1 bg-[var(--pm-red-700)] text-white hover:bg-[var(--pm-red-700)]/90"
+          disabled={isBusy}
+          onClick={onReject}
+        >
+          <X className="size-4" aria-hidden />
+          Decline
+        </Button>
+        <Button
+          size="lg"
+          className="flex-1 bg-[var(--pm-lime-500)] text-[var(--pm-ink-900)] hover:bg-[var(--pm-lime-400)]"
+          disabled={isBusy}
+          onClick={onAccept}
+        >
+          <Check className="size-4" aria-hidden />
+          {acceptPending ? "Accepting…" : "Accept"}
+        </Button>
+      </DetailsActionBar>
+    </>
+  );
+}
+
+function OpenDetails({
+  item,
+  isBusy,
+  applyPending,
+  onApply,
+  onPass,
+}: {
+  item: DiscoverableCampaign;
+  isBusy: boolean;
+  applyPending: boolean;
+  onApply: () => void;
+  onPass: () => void;
+}) {
+  const { campaign, brand } = item;
+  return (
+    <>
+      <DetailsBanner
+        image={campaign.image}
+        brandName={brand.name}
+        title={campaign.name}
+        statusSlot={
+          <StatusPill size="sm" status={{ tone: "info", icon: "circle", label: "Open" }} />
+        }
+      />
+
+      <div className="space-y-5 p-5">
+        <p className="text-sm text-muted-foreground">
+          Apply to be considered. Puzzle Media reviews applications and lets you know if you are
+          selected.
+        </p>
+
+        <section className="rounded-lg border bg-card p-4">
+          <dl className="grid grid-cols-2 gap-4">
+            {campaign.accept_by && (
+              <div>
+                <dt className="text-caption text-muted-foreground">Apply by</dt>
+                <dd className="mt-0.5 text-sm font-medium">
+                  {formatDateTime(campaign.accept_by)}
+                </dd>
+              </div>
+            )}
+            {campaign.go_live_from && (
+              <div>
+                <dt className="text-caption text-muted-foreground">Go live window</dt>
+                <dd className="mt-0.5 text-sm font-medium">
+                  {formatDateTime(campaign.go_live_from)}
+                </dd>
+              </div>
+            )}
+          </dl>
+        </section>
+
+        <section className="space-y-2">
+          <h3 className="text-caption font-semibold tracking-wide text-muted-foreground uppercase">
+            About this campaign
+          </h3>
+          <p className="text-sm">{campaign.objective}</p>
+          <p className="text-sm text-muted-foreground">{campaign.description}</p>
+        </section>
+      </div>
+
+      <DetailsActionBar>
+        <Button
+          size="lg"
+          className="flex-1 bg-[var(--pm-red-700)] text-white hover:bg-[var(--pm-red-700)]/90"
+          disabled={isBusy}
+          onClick={onPass}
+        >
+          <X className="size-4" aria-hidden />
+          Pass
+        </Button>
+        <Button
+          size="lg"
+          className="flex-1 bg-[var(--pm-lime-500)] text-[var(--pm-ink-900)] hover:bg-[var(--pm-lime-400)]"
+          disabled={isBusy}
+          onClick={onApply}
+        >
+          <Check className="size-4" aria-hidden />
+          {applyPending ? "Applying…" : "Apply"}
+        </Button>
+      </DetailsActionBar>
+    </>
+  );
+}
+
+function DeclineDialog({
+  open,
+  onOpenChange,
+  reason,
+  onReasonChange,
+  isPending,
+  onConfirm,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  reason: string;
+  onReasonChange: (value: string) => void;
+  isPending: boolean;
+  onConfirm: () => void;
+}) {
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onReasonChange("");
+        onOpenChange(next);
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Decline this campaign?</DialogTitle>
+          <DialogDescription>
+            Puzzle Media will offer it to another creator. You can tell them why, which helps
+            them match you better next time.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-2">
+          <Label htmlFor="home-decline-reason">
+            Reason <span className="text-muted-foreground">(optional)</span>
+          </Label>
+          <Textarea
+            id="home-decline-reason"
+            value={reason}
+            onChange={(e) => onReasonChange(e.target.value)}
+            placeholder="A sentence is enough."
+            rows={3}
+          />
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button variant="destructive" disabled={isPending} onClick={onConfirm}>
+            {isPending ? "Working…" : "Decline campaign"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
