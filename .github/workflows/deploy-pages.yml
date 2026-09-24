@@ -1,10 +1,13 @@
 name: Deploy to GitHub Pages
 
-# Builds the static export and publishes it. Runs on every push to main, and
-# can be triggered by hand from the Actions tab.
+# Builds the static export and publishes it. Runs on every push to main or
+# gamified-1 (a preview branch — remove once merged), and can be triggered by
+# hand from the Actions tab. Requires the repo's Settings -> Pages -> Source
+# to be "GitHub Actions", not "Deploy from a branch" (the latter serves the
+# repo's raw files through Jekyll instead of this workflow's build).
 on:
   push:
-    branches: [main]
+    branches: [main, gamified-1]
   workflow_dispatch:
 
 # Pages deployment needs these; `id-token` is what lets the deploy step prove
