@@ -208,7 +208,7 @@ export function DevBar() {
               }}
             >
               <RotateCcw className="size-4" aria-hidden />
-              Reset demo data and scenarios
+              Reset demo data
             </Button>
             {mounted && (
               <Button
