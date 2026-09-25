@@ -179,26 +179,39 @@ export function DashboardScreen() {
   const isBusy = accept.isPending || decline.isPending || apply.isPending;
 
   return (
-    <div className="space-y-6">
-      <PageHeader title="Home" description="New campaigns, one at a time." />
+    // flex-col + min-h so the deck card can size itself to whatever room is
+    // actually left on screen (flex-1 below) instead of assuming a fixed
+    // 440px always fits above the bottom nav. On a short phone viewport a
+    // fixed height plus the buttons/caption below it added up to more than
+    // the space between the header and the (fixed, non-pushing) bottom nav,
+    // so the card's bottom edge and its own action row ended up rendering
+    // underneath the nav instead of stopping above it.
+    //
+    // 100dvh minus the sticky header (h-14 = 3.5rem) minus <main>'s own
+    // pt-4 + pb-24 (1rem + 6rem, reserved there specifically to clear the
+    // fixed bottom nav) — not a guess, the actual chrome around this page.
+    <div className="flex min-h-[calc(100dvh-10.5rem)] flex-col gap-6 md:min-h-[calc(100dvh-7rem)]">
+      <div className="space-y-6">
+        <PageHeader title="Home" description="New campaigns, one at a time." />
 
-      {/* Compact pending-tasks banner — replaces the old full "Action
-          required" + "Also open" sections. Everything else that was on the
-          previous home screen (level/streak hero, campaigns, earnings,
-          impact, events, profile) lives on its own screen; the level/streak
-          hero specifically now shows only on Profile, so it is not
-          duplicated here. */}
-      {pendingCount > 0 && (
-        <Link
-          href="/tasks"
-          className="card-hard-on-light press-hard on-light-fill flex items-center justify-between gap-3 rounded-[var(--radius-lg)] bg-[var(--pm-lime-200)] px-4 py-3 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-        >
-          <span className="min-w-0 font-display text-sm leading-tight">
-            You have {pendingCount} thing{pendingCount === 1 ? "" : "s"} needing you
-          </span>
-          <ArrowRight className="size-4 shrink-0" aria-hidden />
-        </Link>
-      )}
+        {/* Compact pending-tasks banner — replaces the old full "Action
+            required" + "Also open" sections. Everything else that was on the
+            previous home screen (level/streak hero, campaigns, earnings,
+            impact, events, profile) lives on its own screen; the level/streak
+            hero specifically now shows only on Profile, so it is not
+            duplicated here. */}
+        {pendingCount > 0 && (
+          <Link
+            href="/tasks"
+            className="card-hard-on-light press-hard on-light-fill flex items-center justify-between gap-3 rounded-[var(--radius-lg)] bg-[var(--pm-lime-200)] px-4 py-3 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            <span className="min-w-0 font-display text-sm leading-tight">
+              You have {pendingCount} thing{pendingCount === 1 ? "" : "s"} needing you
+            </span>
+            <ArrowRight className="size-4 shrink-0" aria-hidden />
+          </Link>
+        )}
+      </div>
 
       {isLoading ? (
         <CardSkeleton rows={3} />
@@ -214,8 +227,12 @@ export function DashboardScreen() {
           }
         />
       ) : (
-        <>
-          <div className="relative mx-auto h-[440px] w-full max-w-sm">
+        <div className="flex min-h-0 flex-1 flex-col gap-4">
+          {/* flex-1 + min-h-0: takes whatever vertical space is left after
+              the header above and the fixed-height controls below, on any
+              screen — never a hardcoded pixel value that may not fit. A
+              min-height floor keeps it usable on very short viewports. */}
+          <div className="relative mx-auto min-h-[320px] w-full max-w-sm flex-1">
             {deck
               .slice(0, 3)
               .map((deckItem, i) => (
@@ -237,7 +254,7 @@ export function DashboardScreen() {
               behavior via mouse, keyboard and screen reader; the drag
               gesture above is a bonus, not a requirement. */}
           {top && (
-            <div className="mx-auto flex w-full max-w-sm gap-3">
+            <div className="mx-auto flex w-full max-w-sm shrink-0 gap-3">
               <Button
                 size="lg"
                 className="flex-1 bg-[var(--pm-red-700)] text-white hover:bg-[var(--pm-red-700)]/90"
@@ -275,17 +292,17 @@ export function DashboardScreen() {
             <Button
               variant="ghost"
               size="sm"
-              className="mx-auto flex"
+              className="mx-auto flex shrink-0"
               onClick={() => setDetailsFor(top)}
             >
               View full details
             </Button>
           )}
 
-          <p className="text-center text-caption text-muted-foreground">
+          <p className="shrink-0 text-center text-caption text-muted-foreground">
             {deck.length} campaign{deck.length > 1 ? "s" : ""} waiting
           </p>
-        </>
+        </div>
       )}
 
       <DetailsSheet
