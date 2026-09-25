@@ -104,7 +104,16 @@ export function DevBar() {
     return () => cancelAnimationFrame(id);
   }, []);
 
-  if (process.env.NODE_ENV === "production") return null;
+  // Hidden in a real production build, but not on the GitHub Pages demo
+  // deploy — that build also has NODE_ENV "production" (it is a real `next
+  // build`), but it is a walkable demo of a mock backend, not a live app
+  // with real users, and the demo is unusable without a way to reset seed
+  // data or switch role from the deployed link itself. NEXT_PUBLIC_BASE_PATH
+  // is already the exact signal next.config.ts uses to mean "this is the
+  // Pages build" (see GITHUB_PAGES there), reused here rather than adding a
+  // second flag for the same thing.
+  const isPagesDemo = process.env.NEXT_PUBLIC_BASE_PATH !== "";
+  if (process.env.NODE_ENV === "production" && !isPagesDemo) return null;
 
   const activeCount = Object.values(scenarios).filter(Boolean).length;
 
